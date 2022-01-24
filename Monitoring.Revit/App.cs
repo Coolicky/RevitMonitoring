@@ -29,6 +29,7 @@ namespace Monitoring.Revit
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
                 .WriteTo.File(new JsonFormatter(",\n"),"C:\\Logs\\log.json")
+                .WriteTo.AzureDocumentDB(config["CosmosDB:Uri"], config["CosmosDB:Key"])
                 .Enrich.FromLogContext()
                 .Enrich.WithProperty("machineName", Environment.MachineName)
                 .Enrich.WithProperty("userName", Environment.UserName)
@@ -40,6 +41,8 @@ namespace Monitoring.Revit
                 .Enrich.WithProperty("revitType", application.ControlledApplication.Product.ToString())
                 .Enrich.WithProperty("revitLanguage", application.ControlledApplication.Language.ToString())
                 .CreateLogger();
+            
+            
             
             
             
