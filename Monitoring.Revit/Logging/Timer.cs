@@ -33,7 +33,7 @@ namespace Monitoring.Revit.Logging
         public void Stop()
         {
             Stopwatch.Stop();
-            _args.Add("Opening Time", Stopwatch.ElapsedMilliseconds/1000);
+            _args.Add("Time Elapsed", Stopwatch.ElapsedMilliseconds/1000);
             LogTime();
         }
 

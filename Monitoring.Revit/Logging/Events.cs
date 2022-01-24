@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using Autodesk.Internal.Windows;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Events;
@@ -24,7 +23,7 @@ namespace Monitoring.Revit.Logging
                 { "viewName", e.CurrentActiveView.Name },
                 { "document", e.Document.PathName }
             };
-            Log.Information("Family Loaded: {Data}", data);
+            Log.Information("View Activated: {Data}", data);
         }
 
         public static void FamilyLoaded(object sender, FamilyLoadedIntoDocumentEventArgs e)
@@ -66,7 +65,7 @@ namespace Monitoring.Revit.Logging
                 { "path", e.Path },
                 { "document", e.Document.PathName }
             };
-            Log.Information("File Imported: {Data}", data);
+            Log.Information("File Exported: {Data}", data);
         }
 
         public static void DocPrinted(object sender, DocumentPrintedEventArgs e)
@@ -74,22 +73,17 @@ namespace Monitoring.Revit.Logging
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
 
-            var printedViewSpecificElement = e.GetPrintedViewElementIds()
-                .FirstOrDefault(r => e.Document.GetElement(r).ViewSpecific);
+            var printedViewIds = e.GetPrintedViewElementIds();
 
-            var viewName = "Could not be determined";
-            if (printedViewSpecificElement != null)
+            foreach (var viewId in printedViewIds)
             {
-                var element = e.Document.GetElement(printedViewSpecificElement);
-                if (e.Document.GetElement(element.OwnerViewId) is View view) viewName = view.Name;
+                var data = new Dictionary<string, object>
+                {
+                    { "view", e.Document.GetElement(viewId) is View view ? view.Name : "Could not be determined" },
+                    { "document", e.Document.PathName }
+                };
+                Log.Information("Printed Document: {Data}", data);
             }
-
-            var data = new Dictionary<string, object>
-            {
-                { "view", viewName },
-                { "document", e.Document.PathName }
-            };
-            Log.Information("File Imported: {Data}", data);
         }
 
         public static void Initialized(object sender, ApplicationInitializedEventArgs e)
@@ -121,7 +115,7 @@ namespace Monitoring.Revit.Logging
             if (Log.Logger == null) return;
             if (UnityContainer == null) return;
             if (!e.IsValidObject) return;
-            
+
             var timer = UnityContainer.Resolve<ITimer>("DocumentOpening");
             if (timer == null) return;
             if (!timer.Stopwatch.IsRunning) return;
@@ -153,7 +147,7 @@ namespace Monitoring.Revit.Logging
             if (Log.Logger == null) return;
             if (UnityContainer == null) return;
             if (!e.IsValidObject) return;
-            
+
             var timer = UnityContainer.Resolve<ITimer>("DocumentSaving");
             timer.Stop();
             Log.Information("Revit Document {Document} Saved", e.Document.PathName);
@@ -182,7 +176,7 @@ namespace Monitoring.Revit.Logging
         {
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
-            
+
             var timer = UnityContainer.Resolve<ITimer>("DocumentSynchronizing");
             timer.Stop();
             Log.Information("Revit Document {Document} Synchronized", e.Document.PathName);
@@ -207,7 +201,7 @@ namespace Monitoring.Revit.Logging
         {
             if (Log.Logger == null) return;
             if (e.Item == null) return;
-            
+
             var data = new Dictionary<string, string>
             {
                 { "buttonId", e.Item.Text.Replace("\r\n", " ") },
