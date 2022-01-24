@@ -12,8 +12,8 @@ namespace Monitoring.Revit.Extensions
         {
            return new LoggerConfiguration()
                 .MinimumLevel.Information()
-                .WriteTo.Async(r => r.File(new JsonFormatter(",\n"),"C:\\Logs\\log.json"))
-                .WriteTo.Async(r => r.AzureDocumentDB(config["CosmosDB:Uri"], config["CosmosDB:Key"]))
+                .WriteTo.Async(r => r.Seq(config["Seq"]))
+                // .WriteTo.Async(r => r.AzureDocumentDB(config["CosmosDB:Uri"], config["CosmosDB:Key"]))
                 .Enrich.FromLogContext()
                 .Enrich.WithProperty("machineName", Environment.MachineName)
                 .Enrich.WithProperty("userName", Environment.UserName)
