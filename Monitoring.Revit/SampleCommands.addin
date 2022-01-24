@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<RevitAddIns>
+    <AddIn Type="Application">
+        <Name>Sample Commands</Name>
+        <Assembly>Monitoring.Revit.dll</Assembly>
+        <AddInId>49FB7FB8-7DB5-4160-B3F6-89BD9C1FCD28</AddInId>
+        <FullClassName>Monitoring.Revit.App</FullClassName>
+        <VendorId>Coolicky</VendorId>
+        <VendorDescription>Coolicky</VendorDescription>
+        <AllowLoadingIntoExistingSession>true</AllowLoadingIntoExistingSession>
+    </AddIn>
+</RevitAddIns>

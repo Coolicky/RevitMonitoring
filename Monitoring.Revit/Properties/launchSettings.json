@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Monitoring.Revit": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Program Files\\Autodesk\\Revit 2022\\Revit.exe",
+      "commandLineArgs": "\"C:\\Program Files\\Autodesk\\Revit 2022\\Samples\\BIM_Projekt_Golden_Nugget-Architektur_und_Ingenieurbau.rvt\""
+    }
+  }
+}
