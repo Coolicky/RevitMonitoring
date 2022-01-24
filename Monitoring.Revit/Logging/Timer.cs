@@ -2,23 +2,16 @@
 using System.Diagnostics;
 using Serilog;
 
-namespace Monitoring.Revit
+namespace Monitoring.Revit.Logging
 {
-
-    public interface ITimer
-    {
-        Stopwatch Stopwatch { get; set; }
-        void AddArgs(string key, object value);
-        void Start();
-        void Stop();
-        void LogTime();
-    }
     public class Timer : ITimer
     {
+        private readonly string _operationName;
         private Dictionary<string, object> _args;
 
-        public Timer(Dictionary<string, object> args)
+        public Timer(string operationName, Dictionary<string, object> args)
         {
+            _operationName = operationName;
             _args = args;
             Stopwatch = new Stopwatch();
         }
@@ -46,7 +39,7 @@ namespace Monitoring.Revit
 
         public void LogTime()
         {
-            Log.Information("Revit Timer {Data}", _args);
+            Log.Information("{OperationName}, {Data}", _operationName, _args);
         }
     }
 }

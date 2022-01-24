@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using Autodesk.Revit.DB.Events;
-using Autodesk.Revit.UI;
-using Microsoft.Extensions.Configuration;
+﻿using Autodesk.Revit.UI;
+using Autodesk.Windows;
+using Monitoring.Revit.Extensions;
+using Monitoring.Revit.Logging;
 using Revit.DependencyInjection.Unity.Applications;
 using Revit.DependencyInjection.Unity.Base;
 using Serilog;
-using Serilog.Formatting.Json;
 using Unity;
-using Unity.Lifetime;
 
 namespace Monitoring.Revit
 {
@@ -18,73 +13,54 @@ namespace Monitoring.Revit
     public class App : RevitApp
     {
         private static IUnityContainer UnityContainer { get; set; }
+
         public override Result OnStartup(IUnityContainer container, UIControlledApplication application)
         {
-            UnityContainer = container;
-            var app = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var configurationBuilder = new ConfigurationBuilder()
-                .AddJsonFile(Path.Combine(app, "appSettings.json"));
-            var config = configurationBuilder.Build();
-            
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Information()
-                .WriteTo.File(new JsonFormatter(",\n"),"C:\\Logs\\log.json")
-                .WriteTo.AzureDocumentDB(config["CosmosDB:Uri"], config["CosmosDB:Key"])
-                .Enrich.FromLogContext()
-                .Enrich.WithProperty("machineName", Environment.MachineName)
-                .Enrich.WithProperty("userName", Environment.UserName)
-                .Enrich.WithProperty("domain", Environment.UserDomainName)
-                .Enrich.WithProperty("operatingSystem", Environment.OSVersion)
-                .Enrich.WithProperty("revitVersionName", application.ControlledApplication.VersionName)
-                .Enrich.WithProperty("revitVersion", application.ControlledApplication.VersionNumber)
-                .Enrich.WithProperty("revitVersion", application.ControlledApplication.VersionBuild)
-                .Enrich.WithProperty("revitType", application.ControlledApplication.Product.ToString())
-                .Enrich.WithProperty("revitLanguage", application.ControlledApplication.Language.ToString())
-                .CreateLogger();
-            
-            
-            
-            
-            
-            
+            Events.UnityContainer = container;
+            var config = Configuration.JsonConfiguration();
+            Log.Logger = Logger.RegisterLogger(config, application);
+
             Log.Information("Revit Started");
 
-            application.ControlledApplication.ApplicationInitialized += Initialized;
-            application.ControlledApplication.DocumentOpening += DocOpening;
-            application.ControlledApplication.DocumentOpened += DocOpened;
+            application.ViewActivated += Events.DocViewActivated;
+            
+            application.ControlledApplication.ApplicationInitialized += Events.Initialized;
+            application.ControlledApplication.DocumentOpening += Events.DocOpening;
+            application.ControlledApplication.DocumentOpened += Events.DocOpened;
+            application.ControlledApplication.DocumentChanged += Events.DocChanged;
+            application.ControlledApplication.DocumentSynchronizingWithCentral += Events.DocSynchronizing;
+            application.ControlledApplication.DocumentSynchronizedWithCentral += Events.DocSynchronized;
+            application.ControlledApplication.DocumentSaving += Events.DocSaving;
+            application.ControlledApplication.DocumentSaved += Events.DocSaved;
+            application.ControlledApplication.DocumentPrinted += Events.DocPrinted;
+            application.ControlledApplication.FileExported += Events.FileExported;
+            application.ControlledApplication.FileImported += Events.FileImported;
+            application.ControlledApplication.FamilyLoadedIntoDocument += Events.FamilyLoaded;
+
+            ComponentManager.ItemExecuted += Events.UiButtonClicked;
+
             return Result.Succeeded;
         }
-        
-        private void DocOpened(object sender, DocumentOpenedEventArgs e)
-        {
-            
-            var timer = UnityContainer.Resolve<ITimer>("DocumentOpening");
-            timer.AddArgs("Document", e.Document.PathName);
-            timer.Stop();
-            Log.Information("Revit Document {Document} Opened", e.Document.PathName);
-        }
 
-        private void DocOpening(object sender, DocumentOpeningEventArgs e)
-        {
-            var args = new Dictionary<string, object>()
-            {
-                { "DocumentPath", e.PathName },
-                { "DocumentType", e.DocumentType }
-            };
-            var timer = new Timer(args);
-            timer.Start();
-            UnityContainer.RegisterInstance(typeof(ITimer), "DocumentOpening", timer , new SingletonLifetimeManager());
-            
-            Log.Information("{Document} Opening Started", e.DocumentType);
-        }
 
-        private void Initialized(object sender, ApplicationInitializedEventArgs e)
-        {
-            Log.Information("Revit Application Initialized");
-        }
-        
         public override Result OnShutdown(IUnityContainer container, UIControlledApplication application)
         {
+            application.ViewActivated -= Events.DocViewActivated;
+            
+            application.ControlledApplication.ApplicationInitialized -= Events.Initialized;
+            application.ControlledApplication.DocumentOpening -= Events.DocOpening;
+            application.ControlledApplication.DocumentOpened -= Events.DocOpened;            
+            application.ControlledApplication.DocumentSynchronizingWithCentral -= Events.DocSynchronizing;
+            application.ControlledApplication.DocumentSynchronizedWithCentral -= Events.DocSynchronized;
+            application.ControlledApplication.DocumentSaving -= Events.DocSaving;
+            application.ControlledApplication.DocumentSaved -= Events.DocSaved;
+            application.ControlledApplication.DocumentPrinted -= Events.DocPrinted;
+            application.ControlledApplication.FileExported -= Events.FileExported;
+            application.ControlledApplication.FileImported -= Events.FileImported;
+            application.ControlledApplication.FamilyLoadedIntoDocument -= Events.FamilyLoaded;
+
+            ComponentManager.ItemExecuted -= Events.UiButtonClicked;
+
             Log.CloseAndFlush();
             return Result.Succeeded;
         }
