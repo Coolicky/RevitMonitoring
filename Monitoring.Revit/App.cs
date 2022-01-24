@@ -12,11 +12,10 @@ namespace Monitoring.Revit
     [ContainerProvider("91EA445D-CED3-48AD-BBC8-0CB2844E1A80")]
     public class App : RevitApp
     {
-        private static IUnityContainer UnityContainer { get; set; }
+        public static IUnityContainer UnityContainer { get; set; }
 
         public override Result OnStartup(IUnityContainer container, UIControlledApplication application)
         {
-            Events.UnityContainer = container;
             var config = Configuration.JsonConfiguration();
             Log.Logger = Logger.RegisterLogger(config, application);
 

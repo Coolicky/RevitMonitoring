@@ -11,8 +11,6 @@ namespace Monitoring.Revit.Logging
 {
     public static class Events
     {
-        public static IUnityContainer UnityContainer { get; set; }
-
         public static void DocViewActivated(object sender, ViewActivatedEventArgs e)
         {
             if (Log.Logger == null) return;
@@ -95,7 +93,7 @@ namespace Monitoring.Revit.Logging
         public static void DocOpening(object sender, DocumentOpeningEventArgs e)
         {
             if (Log.Logger == null) return;
-            if (UnityContainer == null) return;
+            if (App.UnityContainer == null) return;
             if (!e.IsValidObject) return;
             if (e.DocumentType != DocumentType.Project) return;
 
@@ -107,16 +105,16 @@ namespace Monitoring.Revit.Logging
 
             var timer = new Timer("Opening Document", args);
             timer.Start();
-            UnityContainer.RegisterInstance(typeof(ITimer), "DocumentOpening", timer, new SingletonLifetimeManager());
+            App.UnityContainer.RegisterInstance(typeof(ITimer), "DocumentOpening", timer, new SingletonLifetimeManager());
         }
 
         public static void DocOpened(object sender, DocumentOpenedEventArgs e)
         {
             if (Log.Logger == null) return;
-            if (UnityContainer == null) return;
+            if (App.UnityContainer == null) return;
             if (!e.IsValidObject) return;
 
-            var timer = UnityContainer.Resolve<ITimer>("DocumentOpening");
+            var timer = App.UnityContainer.Resolve<ITimer>("DocumentOpening");
             if (timer == null) return;
             if (!timer.Stopwatch.IsRunning) return;
 
@@ -128,7 +126,7 @@ namespace Monitoring.Revit.Logging
         public static void DocSaving(object sender, DocumentSavingEventArgs e)
         {
             if (Log.Logger == null) return;
-            if (UnityContainer == null) return;
+            if (App.UnityContainer == null) return;
             if (!e.IsValidObject) return;
 
             var args = new Dictionary<string, object>
@@ -138,17 +136,17 @@ namespace Monitoring.Revit.Logging
 
             var timer = new Timer("Saving Document", args);
             timer.Start();
-            UnityContainer.RegisterInstance(typeof(ITimer), "DocumentSaving", timer,
+            App.UnityContainer.RegisterInstance(typeof(ITimer), "DocumentSaving", timer,
                 new SingletonLifetimeManager());
         }
 
         public static void DocSaved(object sender, DocumentSavedEventArgs e)
         {
             if (Log.Logger == null) return;
-            if (UnityContainer == null) return;
+            if (App.UnityContainer == null) return;
             if (!e.IsValidObject) return;
 
-            var timer = UnityContainer.Resolve<ITimer>("DocumentSaving");
+            var timer = App.UnityContainer.Resolve<ITimer>("DocumentSaving");
             timer.Stop();
             Log.Information("Revit Document {Document} Saved", e.Document.PathName);
         }
@@ -157,7 +155,7 @@ namespace Monitoring.Revit.Logging
         public static void DocSynchronizing(object sender, DocumentSynchronizingWithCentralEventArgs e)
         {
             if (Log.Logger == null) return;
-            if (UnityContainer == null) return;
+            if (App.UnityContainer == null) return;
             if (!e.IsValidObject) return;
 
             var args = new Dictionary<string, object>
@@ -168,7 +166,7 @@ namespace Monitoring.Revit.Logging
 
             var timer = new Timer("Synchronizing Document", args);
             timer.Start();
-            UnityContainer.RegisterInstance(typeof(ITimer), "DocumentSynchronizing", timer,
+            App.UnityContainer.RegisterInstance(typeof(ITimer), "DocumentSynchronizing", timer,
                 new SingletonLifetimeManager());
         }
 
@@ -177,7 +175,7 @@ namespace Monitoring.Revit.Logging
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
 
-            var timer = UnityContainer.Resolve<ITimer>("DocumentSynchronizing");
+            var timer = App.UnityContainer.Resolve<ITimer>("DocumentSynchronizing");
             timer.Stop();
             Log.Information("Revit Document {Document} Synchronized", e.Document.PathName);
         }
