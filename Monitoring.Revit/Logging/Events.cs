@@ -71,7 +71,8 @@ namespace Monitoring.Revit.Logging
             var data = new Dictionary<string, object>
             {
                 { "viewName", e.CurrentActiveView.Name },
-                { "document", e.Document.PathName }
+                { "documentPath", e.Document.PathName },
+                { "documentTitle", e.Document.Title }
             };
             Log.Information("View Activated: {Data}", data);
 
@@ -91,6 +92,8 @@ namespace Monitoring.Revit.Logging
             {
                 { "familyName", e.FamilyName },
                 { "familyPath", e.FamilyPath },
+                { "documentPath", e.Document.PathName },
+                { "documentTitle", e.Document.Title },
                 { "override", e.OriginalFamilyId == null && e.OriginalFamilyId == ElementId.InvalidElementId }
             };
             Log.Information("Family Loaded: {Data}", data);
@@ -105,7 +108,8 @@ namespace Monitoring.Revit.Logging
             {
                 { "fileFormat", e.Format },
                 { "path", e.Path },
-                { "document", e.Document.PathName }
+                { "documentPath", e.Document.PathName },
+                { "documentTitle", e.Document.Title },
             };
             Log.Information("File Imported: {Data}", data);
         }
@@ -119,7 +123,8 @@ namespace Monitoring.Revit.Logging
             {
                 { "fileFormat", e.Format },
                 { "path", e.Path },
-                { "document", e.Document.PathName }
+                { "documentPath", e.Document.PathName },
+                { "documentTitle", e.Document.Title },
             };
             Log.Information("File Exported: {Data}", data);
         }
@@ -136,7 +141,8 @@ namespace Monitoring.Revit.Logging
                 var data = new Dictionary<string, object>
                 {
                     { "view", e.Document.GetElement(viewId) is View view ? view.Name : "Could not be determined" },
-                    { "document", e.Document.PathName }
+                    { "documentPath", e.Document.PathName },
+                    { "documentTitle", e.Document.Title },
                 };
                 Log.Information("Printed Document: {Data}", data);
             }
@@ -175,8 +181,9 @@ namespace Monitoring.Revit.Logging
             var timer = _unityContainer.Resolve<ITimer>("DocumentOpening");
             if (timer == null) return;
             if (!timer.Stopwatch.IsRunning) return;
-
-            timer.AddArgs("Document", e.Document.PathName);
+            
+            timer.AddArgs("documentPath", e.Document.PathName);
+            timer.AddArgs("documentTitle", e.Document.Title);
             timer.Stop();
             Log.Information("Revit Document {Document} Opened", e.Document.PathName);
             _idleTimer.StartIdleTimer();
@@ -190,7 +197,8 @@ namespace Monitoring.Revit.Logging
 
             var args = new Dictionary<string, object>
             {
-                { "DocumentPath", e.Document.PathName }
+                { "documentPath", e.Document.PathName },
+                { "documentTitle", e.Document.Title }
             };
 
             var timer = new Timer("Saving Document", args);
@@ -206,6 +214,8 @@ namespace Monitoring.Revit.Logging
             if (!e.IsValidObject) return;
 
             var timer = _unityContainer.Resolve<ITimer>("DocumentSaving");
+            timer.AddArgs("documentPath", e.Document.PathName);
+            timer.AddArgs("documentTitle", e.Document.Title);
             timer.Stop();
             Log.Information("Revit Document {Document} Saved", e.Document.PathName);
         }
@@ -219,7 +229,8 @@ namespace Monitoring.Revit.Logging
 
             var args = new Dictionary<string, object>
             {
-                { "DocumentPath", e.Location },
+                { "documentPath", e.Document.PathName },
+                { "documentTitle", e.Document.Title },
                 { "Comments", e.Comments }
             };
 
@@ -235,6 +246,8 @@ namespace Monitoring.Revit.Logging
             if (!e.IsValidObject) return;
 
             var timer = _unityContainer.Resolve<ITimer>("DocumentSynchronizing");
+            timer.AddArgs("documentPath", e.Document.PathName);
+            timer.AddArgs("documentTitle", e.Document.Title);
             timer.Stop();
             Log.Information("Revit Document {Document} Synchronized", e.Document.PathName);
         }
@@ -246,7 +259,8 @@ namespace Monitoring.Revit.Logging
 
             var data = new Dictionary<string, string>
             {
-                { "document", e.GetDocument().PathName },
+                { "documentPath", e.GetDocument().PathName },
+                { "documentTitle", e.GetDocument().Title },
                 { "deletedElements", e.GetDeletedElementIds().Count.ToString() },
                 { "modifiedElements", e.GetModifiedElementIds().Count.ToString() },
                 { "addedElements", e.GetAddedElementIds().Count.ToString() }
@@ -254,6 +268,7 @@ namespace Monitoring.Revit.Logging
             Log.Information("Document Modified: {Data}", data);
         }
 
+        //TODO: Probably Logging this is Overkill too
         public void UiButtonClicked(object sender, RibbonItemExecutedEventArgs e)
         {
             if (Log.Logger == null) return;
