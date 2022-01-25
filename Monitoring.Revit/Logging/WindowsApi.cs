@@ -52,7 +52,7 @@ namespace Monitoring.Revit.Logging
             var handle = GetForegroundWindow();
             var parentHandle = GetWindow(handle, GetWindowType.GW_OWNER);
 
-            return GetWindowTitle(parentHandle);
+            return parentHandle == IntPtr.Zero ? GetWindowTitle(handle) : GetWindowTitle(parentHandle); 
         }
     }
 }
