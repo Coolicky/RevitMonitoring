@@ -199,9 +199,15 @@ namespace Monitoring.Revit.Logging
             var documentPath = e.Document.PathName;
             foreach (var viewId in printedViewIds)
             {
+                var view = e.Document.GetElement(viewId);
+                var isSheet = view is ViewSheet;
+                var viewName = view.Name;
+                if (isSheet)
+                    viewName = $"{((ViewSheet)view).SheetNumber}-{viewName}";
+                
                 var data = new Dictionary<string, object>
                 {
-                    { "view", e.Document.GetElement(viewId) is View view ? view.Name : "Could not be determined" },
+                    { isSheet ? "sheet" : "view",  viewName },
                     { "documentPath", documentPath },
                     { "documentTitle", e.Document.Title },
                 };
