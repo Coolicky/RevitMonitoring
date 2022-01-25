@@ -1,11 +1,13 @@
 ﻿using System;
 using Autodesk.Revit.UI;
 using Microsoft.Extensions.Configuration;
+using Monitoring.Revit.Logging;
 using Serilog;
+using Unity;
 
 namespace Monitoring.Revit.Extensions
 {
-    public static class Logger
+    public static class ApplicationExtensions
     {
         public static ILogger RegisterLogger(IConfigurationRoot config, UIControlledApplication application)
         {
@@ -24,6 +26,17 @@ namespace Monitoring.Revit.Extensions
                 .Enrich.WithProperty("revitType", application.ControlledApplication.Product.ToString())
                 .Enrich.WithProperty("revitLanguage", application.ControlledApplication.Language.ToString())
                 .CreateLogger();
+        }
+        
+        public static IUnityContainer RegisterEventHandler(this IUnityContainer container, IConfigurationRoot config)
+        {
+            container.RegisterSingleton<Events>();
+            var eventConfiguration = new EventConfiguration();
+            config.Bind("Events", eventConfiguration);
+            container.RegisterInstance(eventConfiguration);
+            container.RegisterSingleton<IdleTimer>();
+            
+            return container;
         }
     }
 }

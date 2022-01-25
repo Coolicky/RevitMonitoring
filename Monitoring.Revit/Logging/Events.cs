@@ -14,76 +14,123 @@ namespace Monitoring.Revit.Logging
     public class Events
     {
         private readonly IUnityContainer _unityContainer;
+        private readonly EventConfiguration _eventConfig;
         private readonly IdleTimer _idleTimer;
 
-        public Events(IUnityContainer unityContainer, IdleTimer idleTimer)
+        public Events(IUnityContainer unityContainer, EventConfiguration eventConfig, IdleTimer idleTimer)
         {
             _unityContainer = unityContainer;
+            _eventConfig = eventConfig;
             _idleTimer = idleTimer;
         }
 
         public void SubscribeToEvents(UIControlledApplication application)
         {
-            //TODO: Configure this through appSettings.json
-            application.ViewActivated += DocViewActivated;
+            if (_eventConfig.ViewChanged || _eventConfig.TimeSpent)
+                application.ViewActivated += DocViewActivated;
 
-            application.ControlledApplication.ApplicationInitialized += Initialized;
-            application.ControlledApplication.DocumentOpening += DocOpening;
-            application.ControlledApplication.DocumentOpened += DocOpened;
-            application.ControlledApplication.DocumentChanged += DocChanged;
-            application.ControlledApplication.DocumentSynchronizingWithCentral += DocSynchronizing;
-            application.ControlledApplication.DocumentSynchronizedWithCentral += DocSynchronized;
-            application.ControlledApplication.DocumentSaving += DocSaving;
-            application.ControlledApplication.DocumentSaved += DocSaved;
-            application.ControlledApplication.DocumentPrinted += DocPrinted;
-            application.ControlledApplication.FileExported += FileExported;
-            application.ControlledApplication.FileImported += FileImported;
-            application.ControlledApplication.FamilyLoadedIntoDocument += FamilyLoaded;
+            if (_eventConfig.Initialized)
+                application.ControlledApplication.ApplicationInitialized += Initialized;
+            if (_eventConfig.Opening)
+            {
+                application.ControlledApplication.DocumentOpening += DocOpening;
+                application.ControlledApplication.DocumentOpened += DocOpened;
+            }
 
-            ComponentManager.ItemExecuted += UiButtonClicked;
+            if (_eventConfig.Changes)
+                application.ControlledApplication.DocumentChanged += DocChanged;
+            if (_eventConfig.Synchronizing)
+            {
+                application.ControlledApplication.DocumentSynchronizingWithCentral += DocSynchronizing;
+                application.ControlledApplication.DocumentSynchronizedWithCentral += DocSynchronized;
+            }
+
+            if (_eventConfig.Saving)
+            {
+                application.ControlledApplication.DocumentSaving += DocSaving;
+                application.ControlledApplication.DocumentSaved += DocSaved;
+            }
+
+            if (_eventConfig.Printing)
+                application.ControlledApplication.DocumentPrinted += DocPrinted;
+            if (_eventConfig.Exporting)
+                application.ControlledApplication.FileExported += FileExported;
+            if (_eventConfig.Importing)
+                application.ControlledApplication.FileImported += FileImported;
+            if (_eventConfig.FamilyLoading)
+                application.ControlledApplication.FamilyLoadedIntoDocument += FamilyLoaded;
+            
+            if (_eventConfig.UiClicks)
+                ComponentManager.ItemExecuted += UiButtonClicked;
         }
-        
+
         public void UnsubscribeToEvents(UIControlledApplication application)
         {
-            //TODO: Configure this through appSettings.json
-            application.ViewActivated -= DocViewActivated;
+            if (_eventConfig.ViewChanged || _eventConfig.TimeSpent)
+                application.ViewActivated -= DocViewActivated;
 
-            application.ControlledApplication.ApplicationInitialized -= Initialized;
-            application.ControlledApplication.DocumentOpening -= DocOpening;
-            application.ControlledApplication.DocumentOpened -= DocOpened;
-            application.ControlledApplication.DocumentSynchronizingWithCentral -= DocSynchronizing;
-            application.ControlledApplication.DocumentSynchronizedWithCentral -= DocSynchronized;
-            application.ControlledApplication.DocumentSaving -= DocSaving;
-            application.ControlledApplication.DocumentSaved -= DocSaved;
-            application.ControlledApplication.DocumentPrinted -= DocPrinted;
-            application.ControlledApplication.FileExported -= FileExported;
-            application.ControlledApplication.FileImported -= FileImported;
-            application.ControlledApplication.FamilyLoadedIntoDocument -= FamilyLoaded;
+            if (_eventConfig.Initialized)
+                application.ControlledApplication.ApplicationInitialized -= Initialized;
+            if (_eventConfig.Opening || _eventConfig.TimeSpent)
+            {
+                application.ControlledApplication.DocumentOpening -= DocOpening;
+                application.ControlledApplication.DocumentOpened -= DocOpened;
+            }
 
-            ComponentManager.ItemExecuted -= UiButtonClicked;
+            if (_eventConfig.Changes)
+                application.ControlledApplication.DocumentChanged -= DocChanged;
+            if (_eventConfig.Synchronizing)
+            {
+                application.ControlledApplication.DocumentSynchronizingWithCentral -= DocSynchronizing;
+                application.ControlledApplication.DocumentSynchronizedWithCentral -= DocSynchronized;
+            }
+
+            if (_eventConfig.Saving)
+            {
+                application.ControlledApplication.DocumentSaving -= DocSaving;
+                application.ControlledApplication.DocumentSaved -= DocSaved;
+            }
+
+            if (_eventConfig.Printing)
+                application.ControlledApplication.DocumentPrinted -= DocPrinted;
+            if (_eventConfig.Exporting)
+                application.ControlledApplication.FileExported -= FileExported;
+            if (_eventConfig.Importing)
+                application.ControlledApplication.FileImported -= FileImported;
+            if (_eventConfig.FamilyLoading)
+                application.ControlledApplication.FamilyLoadedIntoDocument -= FamilyLoaded;
+            
+            if (_eventConfig.UiClicks)
+                ComponentManager.ItemExecuted -= UiButtonClicked;
         }
 
-        public void DocViewActivated(object sender, ViewActivatedEventArgs e)
-        {
+        private void DocViewActivated(object sender, ViewActivatedEventArgs e)
+        {            
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
-
-            var data = new Dictionary<string, object>
+            
+            if (_eventConfig.ViewChanged)
             {
-                { "viewName", e.CurrentActiveView.Name },
-                { "documentPath", e.Document.PathName },
-                { "documentTitle", e.Document.Title }
-            };
-            Log.Information("View Activated: {Data}", data);
+                var data = new Dictionary<string, object>
+                {
+                    { "viewName", e.CurrentActiveView.Name },
+                    { "documentPath", e.Document.PathName },
+                    { "documentTitle", e.Document.Title }
+                };
+                Log.Information("View Activated: {Data}", data);
+            }
 
-            var documentChanged = e.CurrentActiveView.Document.PathName != e.PreviousActiveView.Document.PathName;
-            if (documentChanged)
+            if (_eventConfig.TimeSpent)
             {
-                _idleTimer.ChangeDocument();
+                var documentChanged = e.CurrentActiveView.Document.PathName != e.PreviousActiveView.Document.PathName;
+                if (documentChanged)
+                {
+                    _idleTimer.ChangeDocument();
+                }
             }
         }
 
-        public void FamilyLoaded(object sender, FamilyLoadedIntoDocumentEventArgs e)
+        private void FamilyLoaded(object sender, FamilyLoadedIntoDocumentEventArgs e)
         {
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
@@ -99,7 +146,7 @@ namespace Monitoring.Revit.Logging
             Log.Information("Family Loaded: {Data}", data);
         }
 
-        public void FileImported(object sender, FileImportedEventArgs e)
+        private void FileImported(object sender, FileImportedEventArgs e)
         {
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
@@ -114,7 +161,7 @@ namespace Monitoring.Revit.Logging
             Log.Information("File Imported: {Data}", data);
         }
 
-        public void FileExported(object sender, FileExportedEventArgs e)
+        private void FileExported(object sender, FileExportedEventArgs e)
         {
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
@@ -129,7 +176,7 @@ namespace Monitoring.Revit.Logging
             Log.Information("File Exported: {Data}", data);
         }
 
-        public void DocPrinted(object sender, DocumentPrintedEventArgs e)
+        private void DocPrinted(object sender, DocumentPrintedEventArgs e)
         {
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
@@ -148,48 +195,59 @@ namespace Monitoring.Revit.Logging
             }
         }
 
-        public void Initialized(object sender, ApplicationInitializedEventArgs e)
+        private void Initialized(object sender, ApplicationInitializedEventArgs e)
         {
+            var type = sender.GetType();
             if (Log.Logger == null) return;
             Log.Information("Revit Application Initialized");
         }
 
-        public void DocOpening(object sender, DocumentOpeningEventArgs e)
+        private void DocOpening(object sender, DocumentOpeningEventArgs e)
         {
             if (Log.Logger == null) return;
             if (_unityContainer == null) return;
             if (!e.IsValidObject) return;
             if (e.DocumentType != DocumentType.Project) return;
 
-            var args = new Dictionary<string, object>
+            if (_eventConfig.Opening)
             {
-                { "DocumentPath", e.PathName },
-                { "DocumentType", e.DocumentType }
-            };
+                var args = new Dictionary<string, object>
+                {
+                    { "DocumentPath", e.PathName },
+                    { "DocumentType", e.DocumentType }
+                };
 
-            var timer = new Timer("Opening Document", args);
-            timer.Start();
-            _unityContainer.RegisterInstance(typeof(ITimer), "DocumentOpening", timer, new SingletonLifetimeManager());
+                var timer = new Timer("Opening Document", args);
+                timer.Start();
+                _unityContainer.RegisterInstance(typeof(ITimer), "DocumentOpening", timer, new SingletonLifetimeManager());    
+            }
         }
 
-        public void DocOpened(object sender, DocumentOpenedEventArgs e)
+        private void DocOpened(object sender, DocumentOpenedEventArgs e)
         {
             if (Log.Logger == null) return;
             if (_unityContainer == null) return;
             if (!e.IsValidObject) return;
 
-            var timer = _unityContainer.Resolve<ITimer>("DocumentOpening");
-            if (timer == null) return;
-            if (!timer.Stopwatch.IsRunning) return;
-            
-            timer.AddArgs("documentPath", e.Document.PathName);
-            timer.AddArgs("documentTitle", e.Document.Title);
-            timer.Stop();
-            Log.Information("Revit Document {Document} Opened", e.Document.PathName);
-            _idleTimer.StartIdleTimer();
+            if (_eventConfig.Opening)
+            {
+                var timer = _unityContainer.Resolve<ITimer>("DocumentOpening");
+                if (timer == null) return;
+                if (!timer.Stopwatch.IsRunning) return;
+
+                timer.AddArgs("documentPath", e.Document.PathName);
+                timer.AddArgs("documentTitle", e.Document.Title);
+                timer.Stop();
+                Log.Information("Revit Document {Document} Opened", e.Document.PathName);
+            }
+
+            if (_eventConfig.TimeSpent)
+            {
+                _idleTimer.StartIdleTimer();
+            }
         }
 
-        public void DocSaving(object sender, DocumentSavingEventArgs e)
+        private void DocSaving(object sender, DocumentSavingEventArgs e)
         {
             if (Log.Logger == null) return;
             if (_unityContainer == null) return;
@@ -207,7 +265,7 @@ namespace Monitoring.Revit.Logging
                 new SingletonLifetimeManager());
         }
 
-        public void DocSaved(object sender, DocumentSavedEventArgs e)
+        private void DocSaved(object sender, DocumentSavedEventArgs e)
         {
             if (Log.Logger == null) return;
             if (_unityContainer == null) return;
@@ -219,9 +277,8 @@ namespace Monitoring.Revit.Logging
             timer.Stop();
             Log.Information("Revit Document {Document} Saved", e.Document.PathName);
         }
-
-
-        public void DocSynchronizing(object sender, DocumentSynchronizingWithCentralEventArgs e)
+        
+        private void DocSynchronizing(object sender, DocumentSynchronizingWithCentralEventArgs e)
         {
             if (Log.Logger == null) return;
             if (_unityContainer == null) return;
@@ -240,7 +297,7 @@ namespace Monitoring.Revit.Logging
                 new SingletonLifetimeManager());
         }
 
-        public void DocSynchronized(object sender, DocumentSynchronizedWithCentralEventArgs e)
+        private void DocSynchronized(object sender, DocumentSynchronizedWithCentralEventArgs e)
         {
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
@@ -251,8 +308,8 @@ namespace Monitoring.Revit.Logging
             timer.Stop();
             Log.Information("Revit Document {Document} Synchronized", e.Document.PathName);
         }
-
-        public void DocChanged(object sender, DocumentChangedEventArgs e)
+        
+        private void DocChanged(object sender, DocumentChangedEventArgs e)
         {
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
@@ -267,9 +324,8 @@ namespace Monitoring.Revit.Logging
             };
             Log.Information("Document Modified: {Data}", data);
         }
-
-        //TODO: Probably Logging this is Overkill too
-        public void UiButtonClicked(object sender, RibbonItemExecutedEventArgs e)
+        
+        private void UiButtonClicked(object sender, RibbonItemExecutedEventArgs e)
         {
             if (Log.Logger == null) return;
             if (e.Item == null) return;

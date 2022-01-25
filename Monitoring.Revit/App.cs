@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Reflection;
 using Autodesk.Revit.UI;
+using Autodesk.Revit.UI.Events;
 using Autodesk.Windows;
+using Microsoft.Extensions.Configuration;
 using Monitoring.Revit.Extensions;
 using Monitoring.Revit.Logging;
 using Revit.DependencyInjection.Unity.Applications;
@@ -19,25 +21,19 @@ namespace Monitoring.Revit
         public override Result OnStartup(IUnityContainer container, UIControlledApplication application)
         {
             var config = Configuration.JsonConfiguration();
-            Log.Logger = Logger.RegisterLogger(config, application);
-            
+            Log.Logger = ApplicationExtensions.RegisterLogger(config, application);
             var fi = application.GetType().GetField("m_uiapplication", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (fi != null)
-            {
-                var uiApp = (UIApplication)fi.GetValue(application);
-                container.RegisterInstance(uiApp);
-            }
+            var uiApp = (UIApplication)fi?.GetValue(application);
             
-            
-            Log.Information("Revit Started");            
-            
-            container.RegisterSingleton<Events>();
-            container.RegisterSingleton<IdleTimer>();
+            container.RegisterInstance(uiApp);
+            container.RegisterInstance(config);
             container.RegisterInstance(application.MainWindowHandle);
+            container.RegisterEventHandler(config);
             
             var events = container.Resolve<Events>();
             events.SubscribeToEvents(application);
 
+            Log.Information("Revit Started");  
             return Result.Succeeded;
         }
 
