@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using Autodesk.Revit.UI;
 using Autodesk.Windows;
 using Monitoring.Revit.Extensions;
@@ -19,11 +20,21 @@ namespace Monitoring.Revit
         {
             var config = Configuration.JsonConfiguration();
             Log.Logger = Logger.RegisterLogger(config, application);
-            Handle = application.MainWindowHandle;
+            
+            var fi = application.GetType().GetField("m_uiapplication", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (fi != null)
+            {
+                var uiApp = (UIApplication)fi.GetValue(application);
+                container.RegisterInstance(uiApp);
+            }
+            
             
             Log.Information("Revit Started");            
             
             container.RegisterSingleton<Events>();
+            container.RegisterSingleton<IdleTimer>();
+            container.RegisterInstance(application.MainWindowHandle);
+            
             var events = container.Resolve<Events>();
             events.SubscribeToEvents(application);
 
@@ -34,6 +45,9 @@ namespace Monitoring.Revit
         {
             var events = container.Resolve<Events>();
             events.UnsubscribeToEvents(application);
+
+            var idleTimer = container.Resolve<IdleTimer>();
+            idleTimer.Dispose();
 
             Log.CloseAndFlush();
             return Result.Succeeded;

@@ -14,12 +14,13 @@ namespace Monitoring.Revit.Logging
     public class Events
     {
         private readonly IUnityContainer _unityContainer;
+        private readonly IdleTimer _idleTimer;
 
-        public Events(IUnityContainer unityContainer)
+        public Events(IUnityContainer unityContainer, IdleTimer idleTimer)
         {
             _unityContainer = unityContainer;
+            _idleTimer = idleTimer;
         }
-
 
         public void SubscribeToEvents(UIControlledApplication application)
         {
@@ -41,7 +42,7 @@ namespace Monitoring.Revit.Logging
 
             ComponentManager.ItemExecuted += UiButtonClicked;
         }
-
+        
         public void UnsubscribeToEvents(UIControlledApplication application)
         {
             //TODO: Configure this through appSettings.json
@@ -62,7 +63,6 @@ namespace Monitoring.Revit.Logging
             ComponentManager.ItemExecuted -= UiButtonClicked;
         }
 
-
         public void DocViewActivated(object sender, ViewActivatedEventArgs e)
         {
             if (Log.Logger == null) return;
@@ -74,6 +74,12 @@ namespace Monitoring.Revit.Logging
                 { "document", e.Document.PathName }
             };
             Log.Information("View Activated: {Data}", data);
+
+            var documentChanged = e.CurrentActiveView.Document.PathName != e.PreviousActiveView.Document.PathName;
+            if (documentChanged)
+            {
+                _idleTimer.ChangeDocument();
+            }
         }
 
         public void FamilyLoaded(object sender, FamilyLoadedIntoDocumentEventArgs e)
@@ -173,6 +179,7 @@ namespace Monitoring.Revit.Logging
             timer.AddArgs("Document", e.Document.PathName);
             timer.Stop();
             Log.Information("Revit Document {Document} Opened", e.Document.PathName);
+            _idleTimer.StartIdleTimer();
         }
 
         public void DocSaving(object sender, DocumentSavingEventArgs e)
