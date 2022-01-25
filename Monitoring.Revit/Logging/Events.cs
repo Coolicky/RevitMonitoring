@@ -270,7 +270,7 @@ namespace Monitoring.Revit.Logging
             var documentPath = e.Document.PathName;
             _savingTimer.AddArgs("documentPath", documentPath);
             _savingTimer.AddArgs("documentTitle", e.Document.Title);
-            _savingTimer.AddArgs("documentSize", documentPath);
+            _savingTimer.AddArgs("documentSize", GetDocumentSize(documentPath));
             _savingTimer.Stop();
         }
 
@@ -288,9 +288,9 @@ namespace Monitoring.Revit.Logging
             if (!e.IsValidObject) return;
 
             var documentPath = e.Document.PathName;
-            _savingTimer.AddArgs("documentPath", documentPath);
-            _savingTimer.AddArgs("documentTitle", e.Document.Title);
-            _savingTimer.AddArgs("documentSize", GetDocumentSize(documentPath));
+            _savingAsTimer.AddArgs("documentPath", documentPath);
+            _savingAsTimer.AddArgs("documentTitle", e.Document.Title);
+            _savingAsTimer.AddArgs("documentSize", GetDocumentSize(documentPath));
             _savingAsTimer.AddArgs("masterFile", e.IsSavingAsMasterFile);
             _savingAsTimer.AddArgs("originalDocumentPath", e.OriginalPath);
             _savingTimer.Stop();
