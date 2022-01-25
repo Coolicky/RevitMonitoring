@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using Autodesk.Internal.Windows;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Events;
@@ -237,6 +238,7 @@ namespace Monitoring.Revit.Logging
 
                 timer.AddArgs("documentPath", e.Document.PathName);
                 timer.AddArgs("documentTitle", e.Document.Title);
+                timer.AddArgs("documentSize", GetDocumentSize(e.Document.PathName));
                 timer.Stop();
                 Log.Information("Revit Document {Document} Opened", e.Document.PathName);
             }
@@ -274,6 +276,7 @@ namespace Monitoring.Revit.Logging
             var timer = _unityContainer.Resolve<ITimer>("DocumentSaving");
             timer.AddArgs("documentPath", e.Document.PathName);
             timer.AddArgs("documentTitle", e.Document.Title);
+            timer.AddArgs("documentSize", GetDocumentSize(e.Document.PathName));
             timer.Stop();
             Log.Information("Revit Document {Document} Saved", e.Document.PathName);
         }
@@ -305,6 +308,7 @@ namespace Monitoring.Revit.Logging
             var timer = _unityContainer.Resolve<ITimer>("DocumentSynchronizing");
             timer.AddArgs("documentPath", e.Document.PathName);
             timer.AddArgs("documentTitle", e.Document.Title);
+            timer.AddArgs("documentSize", GetDocumentSize(e.Document.PathName));
             timer.Stop();
             Log.Information("Revit Document {Document} Synchronized", e.Document.PathName);
         }
@@ -336,6 +340,13 @@ namespace Monitoring.Revit.Logging
                 { "buttonName", e.Item.Id }
             };
             Log.Information("Button Clicked: {Data}", data);
+        }
+
+        private string GetDocumentSize(string documentPath)
+        {
+            if (string.IsNullOrWhiteSpace(documentPath)) return "N/A";
+            var fileInfo = new FileInfo(documentPath);
+            return $"{fileInfo.Length / 1024} MB";
         }
     }
 }
