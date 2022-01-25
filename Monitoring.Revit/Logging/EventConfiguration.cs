@@ -14,5 +14,7 @@
         public bool Changes { get; set; }
         public bool UiClicks { get; set; }
         public bool TimeSpent { get; set; }
+        public double IdleTimeout { get; set; } = 60;
+        public double TimerFrequency { get; set; } = 60;
     }
 }

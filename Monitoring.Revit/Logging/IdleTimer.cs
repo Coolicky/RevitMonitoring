@@ -18,31 +18,31 @@ namespace Monitoring.Revit.Logging
         private readonly IntPtr _revitMainHandle;
         private readonly UIApplication _uiApp;
         private System.Timers.Timer _timer;
+        private readonly EventConfiguration _eventConfig;
 
         private DateTime _startTime;
         private string _startingDocument;
         private bool _wasActive;
 
-        //TODO: Get timeout from config
-        private readonly double _logTimeOut = 60;
         private double _idleSeconds;
         private uint _previousLastInput;
-        private DateTime _idleStart = DateTime.Now;
+        private DateTime _idleStart;
         private object _lock = new object();
 
-        public IdleTimer(IntPtr revitMainHandle, UIApplication uiApp)
+        public IdleTimer(IntPtr revitMainHandle, UIApplication uiApp, EventConfiguration eventConfig)
         {
             _revitMainHandle = revitMainHandle;
             _uiApp = uiApp;
+            _eventConfig = eventConfig;
             _timer = new System.Timers.Timer();
             _timer.Elapsed += TimerElapsed;
-            //TODO: Get frequency from config
-            _timer.Interval = 1000 * 10;
+
+            _timer.Interval = _eventConfig.TimerFrequency * 1000;
         }
 
         public void ChangeDocument()
         {
-            LogActivity();
+            LogActivity("Document Changed");
         }
 
         private void Reset()
@@ -54,6 +54,7 @@ namespace Monitoring.Revit.Logging
         public void StartIdleTimer()
         {
             _timer.Enabled = true;
+            _idleStart = DateTime.Now;
             _startTime = DateTime.Now;
             if (string.IsNullOrEmpty(_startingDocument))
                 _startingDocument = _uiApp.ActiveUIDocument.Document.PathName;
@@ -64,7 +65,7 @@ namespace Monitoring.Revit.Logging
         public void StopIdleTimer()
         {
             _timer.Stop();
-            LogActivity();
+            LogActivity("Manually Stopped");
         }
 
         private void TimerElapsed(object sender, ElapsedEventArgs e)
@@ -73,7 +74,7 @@ namespace Monitoring.Revit.Logging
             {
                 var lastInput = GetLastInputInfoValue();
 
-                if (lastInput == _previousLastInput)
+                if (lastInput - _previousLastInput < 250)
                 {
                     _idleSeconds = (DateTime.Now - _idleStart).TotalSeconds;
                 }
@@ -86,9 +87,9 @@ namespace Monitoring.Revit.Logging
                 _previousLastInput = lastInput;
             }
 
-            if (_idleSeconds > _logTimeOut)
+            if (_idleSeconds > _eventConfig.IdleTimeout)
             {
-                if (_wasActive) LogActivity();
+                if (_wasActive) LogActivity("Idle");
                 _wasActive = false;
                 return;
             }
@@ -98,7 +99,7 @@ namespace Monitoring.Revit.Logging
             var isRevitWindowActive = revitWindowTitle == activeWindowTitle;
             if (!isRevitWindowActive)
             {
-                if (_wasActive) LogActivity();
+                if (_wasActive) LogActivity("Not in Revit");
                 _wasActive = false;
             }
             else
@@ -107,10 +108,11 @@ namespace Monitoring.Revit.Logging
             }
         }
 
-        private void LogActivity()
+        private void LogActivity(string reason)
         {
             var data = new Dictionary<string, object>
             {
+                { "Reason", reason},
                 { "Document", _startingDocument },
                 { "StartTime", _startTime },
                 { "EndTime", DateTime.Now },
@@ -135,7 +137,7 @@ namespace Monitoring.Revit.Logging
         {
             if (_wasActive)
             {
-                LogActivity();
+                LogActivity("Finished");
             }
             _timer?.Stop();
             _timer?.Dispose();
