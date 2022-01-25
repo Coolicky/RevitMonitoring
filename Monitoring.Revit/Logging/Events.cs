@@ -346,7 +346,7 @@ namespace Monitoring.Revit.Logging
         {
             if (string.IsNullOrWhiteSpace(documentPath)) return "N/A";
             var fileInfo = new FileInfo(documentPath);
-            return $"{fileInfo.Length / 1024} MB";
+            return $"{fileInfo.Length / 1024 / 1024} MB";
         }
     }
 }
