@@ -9,10 +9,10 @@ namespace Monitoring.Revit.Logging
         private readonly string _operationName;
         private Dictionary<string, object> _args;
 
-        public Timer(string operationName, Dictionary<string, object> args)
+        public Timer(string operationName)
         {
             _operationName = operationName;
-            _args = args;
+            _args = new Dictionary<string, object>();
             Stopwatch = new Stopwatch();
         }
         public Stopwatch Stopwatch { get; set; }
@@ -35,6 +35,9 @@ namespace Monitoring.Revit.Logging
             Stopwatch.Stop();
             _args.Add("Time Elapsed", Stopwatch.ElapsedMilliseconds/1000);
             LogTime();
+            
+            Stopwatch.Reset();
+            _args.Clear();
         }
 
         public void LogTime()

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Autodesk.Internal.Windows;
 using Autodesk.Revit.DB;
@@ -7,22 +8,26 @@ using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Events;
 using Autodesk.Windows;
 using Serilog;
-using Unity;
-using Unity.Lifetime;
 
 namespace Monitoring.Revit.Logging
 {
     public class Events
     {
-        private readonly IUnityContainer _unityContainer;
+        private Timer _openingTimer;
+        private Timer _savingTimer;
+        private Timer _savingAsTimer;
+        private Timer _synchronizingTimer;
         private readonly EventConfiguration _eventConfig;
         private readonly IdleTimer _idleTimer;
 
-        public Events(IUnityContainer unityContainer, EventConfiguration eventConfig, IdleTimer idleTimer)
+        public Events(EventConfiguration eventConfig, IdleTimer idleTimer)
         {
-            _unityContainer = unityContainer;
             _eventConfig = eventConfig;
             _idleTimer = idleTimer;
+            _openingTimer = new Timer("Opening Document");
+            _savingTimer = new Timer("Saving Document");
+            _savingAsTimer = new Timer("SavingAs Document");
+            _synchronizingTimer = new Timer("Synchronizing Document");
         }
 
         public void SubscribeToEvents(UIControlledApplication application)
@@ -50,6 +55,9 @@ namespace Monitoring.Revit.Logging
             {
                 application.ControlledApplication.DocumentSaving += DocSaving;
                 application.ControlledApplication.DocumentSaved += DocSaved;
+
+                application.ControlledApplication.DocumentSavingAs += DocSavingAs;
+                application.ControlledApplication.DocumentSavedAs += DocSavedAs;
             }
 
             if (_eventConfig.Printing)
@@ -60,7 +68,7 @@ namespace Monitoring.Revit.Logging
                 application.ControlledApplication.FileImported += FileImported;
             if (_eventConfig.FamilyLoading)
                 application.ControlledApplication.FamilyLoadedIntoDocument += FamilyLoaded;
-            
+
             if (_eventConfig.UiClicks)
                 ComponentManager.ItemExecuted += UiButtonClicked;
         }
@@ -100,22 +108,23 @@ namespace Monitoring.Revit.Logging
                 application.ControlledApplication.FileImported -= FileImported;
             if (_eventConfig.FamilyLoading)
                 application.ControlledApplication.FamilyLoadedIntoDocument -= FamilyLoaded;
-            
+
             if (_eventConfig.UiClicks)
                 ComponentManager.ItemExecuted -= UiButtonClicked;
         }
 
         private void DocViewActivated(object sender, ViewActivatedEventArgs e)
-        {            
+        {
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
-            
+
             if (_eventConfig.ViewChanged)
             {
+                var documentPath = e.Document.PathName;
                 var data = new Dictionary<string, object>
                 {
                     { "viewName", e.CurrentActiveView.Name },
-                    { "documentPath", e.Document.PathName },
+                    { "documentPath", documentPath },
                     { "documentTitle", e.Document.Title }
                 };
                 Log.Information("View Activated: {Data}", data);
@@ -136,11 +145,12 @@ namespace Monitoring.Revit.Logging
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
 
+            var documentPath = e.Document.PathName;
             var data = new Dictionary<string, object>
             {
                 { "familyName", e.FamilyName },
                 { "familyPath", e.FamilyPath },
-                { "documentPath", e.Document.PathName },
+                { "documentPath", documentPath },
                 { "documentTitle", e.Document.Title },
                 { "override", e.OriginalFamilyId == null && e.OriginalFamilyId == ElementId.InvalidElementId }
             };
@@ -152,11 +162,12 @@ namespace Monitoring.Revit.Logging
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
 
+            var documentPath = e.Document.PathName;
             var data = new Dictionary<string, object>
             {
                 { "fileFormat", e.Format },
                 { "path", e.Path },
-                { "documentPath", e.Document.PathName },
+                { "documentPath", documentPath },
                 { "documentTitle", e.Document.Title },
             };
             Log.Information("File Imported: {Data}", data);
@@ -167,11 +178,12 @@ namespace Monitoring.Revit.Logging
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
 
+            var documentPath = e.Document.PathName;
             var data = new Dictionary<string, object>
             {
                 { "fileFormat", e.Format },
                 { "path", e.Path },
-                { "documentPath", e.Document.PathName },
+                { "documentPath", documentPath },
                 { "documentTitle", e.Document.Title },
             };
             Log.Information("File Exported: {Data}", data);
@@ -184,12 +196,13 @@ namespace Monitoring.Revit.Logging
 
             var printedViewIds = e.GetPrintedViewElementIds();
 
+            var documentPath = e.Document.PathName;
             foreach (var viewId in printedViewIds)
             {
                 var data = new Dictionary<string, object>
                 {
                     { "view", e.Document.GetElement(viewId) is View view ? view.Name : "Could not be determined" },
-                    { "documentPath", e.Document.PathName },
+                    { "documentPath", documentPath },
                     { "documentTitle", e.Document.Title },
                 };
                 Log.Information("Printed Document: {Data}", data);
@@ -206,41 +219,33 @@ namespace Monitoring.Revit.Logging
         private void DocOpening(object sender, DocumentOpeningEventArgs e)
         {
             if (Log.Logger == null) return;
-            if (_unityContainer == null) return;
             if (!e.IsValidObject) return;
             if (e.DocumentType != DocumentType.Project) return;
 
             if (_eventConfig.Opening)
             {
-                var args = new Dictionary<string, object>
-                {
-                    { "DocumentPath", e.PathName },
-                    { "DocumentType", e.DocumentType }
-                };
+                _openingTimer.AddArgs("DocumentPath", e.PathName);
+                _openingTimer.AddArgs("DocumentType", e.DocumentType);
 
-                var timer = new Timer("Opening Document", args);
-                timer.Start();
-                _unityContainer.RegisterInstance(typeof(ITimer), "DocumentOpening", timer, new SingletonLifetimeManager());    
+                _openingTimer.Start();
             }
         }
 
         private void DocOpened(object sender, DocumentOpenedEventArgs e)
         {
             if (Log.Logger == null) return;
-            if (_unityContainer == null) return;
             if (!e.IsValidObject) return;
 
             if (_eventConfig.Opening)
             {
-                var timer = _unityContainer.Resolve<ITimer>("DocumentOpening");
-                if (timer == null) return;
-                if (!timer.Stopwatch.IsRunning) return;
+                if (_openingTimer == null) return;
+                if (!_openingTimer.Stopwatch.IsRunning) return;
 
-                timer.AddArgs("documentPath", e.Document.PathName);
-                timer.AddArgs("documentTitle", e.Document.Title);
-                timer.AddArgs("documentSize", GetDocumentSize(e.Document.PathName));
-                timer.Stop();
-                Log.Information("Revit Document {Document} Opened", e.Document.PathName);
+                var documentPath = e.Document.PathName;
+                _openingTimer.AddArgs("documentPath", documentPath);
+                _openingTimer.AddArgs("documentTitle", e.Document.Title);
+                _openingTimer.AddArgs("documentSize", GetDocumentSize(documentPath));
+                _openingTimer.Stop();
             }
 
             if (_eventConfig.TimeSpent)
@@ -252,52 +257,53 @@ namespace Monitoring.Revit.Logging
         private void DocSaving(object sender, DocumentSavingEventArgs e)
         {
             if (Log.Logger == null) return;
-            if (_unityContainer == null) return;
             if (!e.IsValidObject) return;
 
-            var args = new Dictionary<string, object>
-            {
-                { "documentPath", e.Document.PathName },
-                { "documentTitle", e.Document.Title }
-            };
-
-            var timer = new Timer("Saving Document", args);
-            timer.Start();
-            _unityContainer.RegisterInstance(typeof(ITimer), "DocumentSaving", timer,
-                new SingletonLifetimeManager());
+            _savingTimer.Start();
         }
 
         private void DocSaved(object sender, DocumentSavedEventArgs e)
         {
             if (Log.Logger == null) return;
-            if (_unityContainer == null) return;
             if (!e.IsValidObject) return;
 
-            var timer = _unityContainer.Resolve<ITimer>("DocumentSaving");
-            timer.AddArgs("documentPath", e.Document.PathName);
-            timer.AddArgs("documentTitle", e.Document.Title);
-            timer.AddArgs("documentSize", GetDocumentSize(e.Document.PathName));
-            timer.Stop();
-            Log.Information("Revit Document {Document} Saved", e.Document.PathName);
+            var documentPath = e.Document.PathName;
+            _savingTimer.AddArgs("documentPath", documentPath);
+            _savingTimer.AddArgs("documentTitle", e.Document.Title);
+            _savingTimer.AddArgs("documentSize", documentPath);
+            _savingTimer.Stop();
         }
-        
+
+        private void DocSavingAs(object sender, DocumentSavingAsEventArgs e)
+        {
+            if (Log.Logger == null) return;
+            if (!e.IsValidObject) return;
+
+            _savingAsTimer.Start();
+        }
+
+        private void DocSavedAs(object sender, DocumentSavedAsEventArgs e)
+        {
+            if (Log.Logger == null) return;
+            if (!e.IsValidObject) return;
+
+            var documentPath = e.Document.PathName;
+            _savingTimer.AddArgs("documentPath", documentPath);
+            _savingTimer.AddArgs("documentTitle", e.Document.Title);
+            _savingTimer.AddArgs("documentSize", GetDocumentSize(documentPath));
+            _savingAsTimer.AddArgs("masterFile", e.IsSavingAsMasterFile);
+            _savingAsTimer.AddArgs("originalDocumentPath", e.OriginalPath);
+            _savingTimer.Stop();
+        }
+
+
         private void DocSynchronizing(object sender, DocumentSynchronizingWithCentralEventArgs e)
         {
             if (Log.Logger == null) return;
-            if (_unityContainer == null) return;
             if (!e.IsValidObject) return;
 
-            var args = new Dictionary<string, object>
-            {
-                { "documentPath", e.Document.PathName },
-                { "documentTitle", e.Document.Title },
-                { "Comments", e.Comments }
-            };
-
-            var timer = new Timer("Synchronizing Document", args);
-            timer.Start();
-            _unityContainer.RegisterInstance(typeof(ITimer), "DocumentSynchronizing", timer,
-                new SingletonLifetimeManager());
+            _synchronizingTimer.AddArgs("comments", e.Comments);
+            _synchronizingTimer.Start();
         }
 
         private void DocSynchronized(object sender, DocumentSynchronizedWithCentralEventArgs e)
@@ -305,22 +311,22 @@ namespace Monitoring.Revit.Logging
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
 
-            var timer = _unityContainer.Resolve<ITimer>("DocumentSynchronizing");
-            timer.AddArgs("documentPath", e.Document.PathName);
-            timer.AddArgs("documentTitle", e.Document.Title);
-            timer.AddArgs("documentSize", GetDocumentSize(e.Document.PathName));
-            timer.Stop();
-            Log.Information("Revit Document {Document} Synchronized", e.Document.PathName);
+            var documentPath = e.Document.PathName;
+            _synchronizingTimer.AddArgs("documentPath", documentPath);
+            _synchronizingTimer.AddArgs("documentTitle", e.Document.Title);
+            _synchronizingTimer.AddArgs("documentSize", GetDocumentSize(documentPath));
+            _synchronizingTimer.Stop();
         }
-        
+
         private void DocChanged(object sender, DocumentChangedEventArgs e)
         {
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
 
+            var documentPath = e.GetDocument().PathName;
             var data = new Dictionary<string, string>
             {
-                { "documentPath", e.GetDocument().PathName },
+                { "documentPath", documentPath },
                 { "documentTitle", e.GetDocument().Title },
                 { "deletedElements", e.GetDeletedElementIds().Count.ToString() },
                 { "modifiedElements", e.GetModifiedElementIds().Count.ToString() },
@@ -328,7 +334,7 @@ namespace Monitoring.Revit.Logging
             };
             Log.Information("Document Modified: {Data}", data);
         }
-        
+
         private void UiButtonClicked(object sender, RibbonItemExecutedEventArgs e)
         {
             if (Log.Logger == null) return;
@@ -342,11 +348,17 @@ namespace Monitoring.Revit.Logging
             Log.Information("Button Clicked: {Data}", data);
         }
 
-        private string GetDocumentSize(string documentPath)
+        private static string GetDocumentSize(string path)
         {
-            if (string.IsNullOrWhiteSpace(documentPath)) return "N/A";
-            var fileInfo = new FileInfo(documentPath);
-            return $"{fileInfo.Length / 1024 / 1024} MB";
+            try
+            {
+                var fileInfo = new FileInfo(path);
+                return $"{fileInfo.Length / 1024 / 1024} MB";
+            }
+            catch (Exception)
+            {
+                return "N/A";
+            }
         }
     }
 }
