@@ -21,8 +21,15 @@ namespace Monitoring.Revit
 
             Log.Information("Revit Started");
 
+            SubscribeToEvents(application);
+
+            return Result.Succeeded;
+        }
+
+        private static void SubscribeToEvents(UIControlledApplication application)
+        {
             application.ViewActivated += Events.DocViewActivated;
-            
+
             application.ControlledApplication.ApplicationInitialized += Events.Initialized;
             application.ControlledApplication.DocumentOpening += Events.DocOpening;
             application.ControlledApplication.DocumentOpened += Events.DocOpened;
@@ -37,18 +44,15 @@ namespace Monitoring.Revit
             application.ControlledApplication.FamilyLoadedIntoDocument += Events.FamilyLoaded;
 
             ComponentManager.ItemExecuted += Events.UiButtonClicked;
-
-            return Result.Succeeded;
         }
 
-
-        public override Result OnShutdown(IUnityContainer container, UIControlledApplication application)
+        private static void UnsubscribeToEvents(UIControlledApplication application)
         {
             application.ViewActivated -= Events.DocViewActivated;
-            
+
             application.ControlledApplication.ApplicationInitialized -= Events.Initialized;
             application.ControlledApplication.DocumentOpening -= Events.DocOpening;
-            application.ControlledApplication.DocumentOpened -= Events.DocOpened;            
+            application.ControlledApplication.DocumentOpened -= Events.DocOpened;
             application.ControlledApplication.DocumentSynchronizingWithCentral -= Events.DocSynchronizing;
             application.ControlledApplication.DocumentSynchronizedWithCentral -= Events.DocSynchronized;
             application.ControlledApplication.DocumentSaving -= Events.DocSaving;
@@ -59,6 +63,12 @@ namespace Monitoring.Revit
             application.ControlledApplication.FamilyLoadedIntoDocument -= Events.FamilyLoaded;
 
             ComponentManager.ItemExecuted -= Events.UiButtonClicked;
+        }
+
+
+        public override Result OnShutdown(IUnityContainer container, UIControlledApplication application)
+        {
+            UnsubscribeToEvents(application);
 
             Log.CloseAndFlush();
             return Result.Succeeded;
