@@ -1,4 +1,5 @@
-﻿using Autodesk.Revit.UI;
+﻿using System;
+using Autodesk.Revit.UI;
 using Autodesk.Windows;
 using Monitoring.Revit.Extensions;
 using Monitoring.Revit.Logging;
@@ -12,63 +13,27 @@ namespace Monitoring.Revit
     [ContainerProvider("91EA445D-CED3-48AD-BBC8-0CB2844E1A80")]
     public class App : RevitApp
     {
-        public static IUnityContainer UnityContainer { get; set; }
+        public static IntPtr Handle { get; set; }
 
         public override Result OnStartup(IUnityContainer container, UIControlledApplication application)
         {
             var config = Configuration.JsonConfiguration();
             Log.Logger = Logger.RegisterLogger(config, application);
-
-            Log.Information("Revit Started");
-
-            SubscribeToEvents(application);
+            Handle = application.MainWindowHandle;
+            
+            Log.Information("Revit Started");            
+            
+            container.RegisterSingleton<Events>();
+            var events = container.Resolve<Events>();
+            events.SubscribeToEvents(application);
 
             return Result.Succeeded;
         }
 
-        private static void SubscribeToEvents(UIControlledApplication application)
-        {
-            application.ViewActivated += Events.DocViewActivated;
-
-            application.ControlledApplication.ApplicationInitialized += Events.Initialized;
-            application.ControlledApplication.DocumentOpening += Events.DocOpening;
-            application.ControlledApplication.DocumentOpened += Events.DocOpened;
-            application.ControlledApplication.DocumentChanged += Events.DocChanged;
-            application.ControlledApplication.DocumentSynchronizingWithCentral += Events.DocSynchronizing;
-            application.ControlledApplication.DocumentSynchronizedWithCentral += Events.DocSynchronized;
-            application.ControlledApplication.DocumentSaving += Events.DocSaving;
-            application.ControlledApplication.DocumentSaved += Events.DocSaved;
-            application.ControlledApplication.DocumentPrinted += Events.DocPrinted;
-            application.ControlledApplication.FileExported += Events.FileExported;
-            application.ControlledApplication.FileImported += Events.FileImported;
-            application.ControlledApplication.FamilyLoadedIntoDocument += Events.FamilyLoaded;
-
-            ComponentManager.ItemExecuted += Events.UiButtonClicked;
-        }
-
-        private static void UnsubscribeToEvents(UIControlledApplication application)
-        {
-            application.ViewActivated -= Events.DocViewActivated;
-
-            application.ControlledApplication.ApplicationInitialized -= Events.Initialized;
-            application.ControlledApplication.DocumentOpening -= Events.DocOpening;
-            application.ControlledApplication.DocumentOpened -= Events.DocOpened;
-            application.ControlledApplication.DocumentSynchronizingWithCentral -= Events.DocSynchronizing;
-            application.ControlledApplication.DocumentSynchronizedWithCentral -= Events.DocSynchronized;
-            application.ControlledApplication.DocumentSaving -= Events.DocSaving;
-            application.ControlledApplication.DocumentSaved -= Events.DocSaved;
-            application.ControlledApplication.DocumentPrinted -= Events.DocPrinted;
-            application.ControlledApplication.FileExported -= Events.FileExported;
-            application.ControlledApplication.FileImported -= Events.FileImported;
-            application.ControlledApplication.FamilyLoadedIntoDocument -= Events.FamilyLoaded;
-
-            ComponentManager.ItemExecuted -= Events.UiButtonClicked;
-        }
-
-
         public override Result OnShutdown(IUnityContainer container, UIControlledApplication application)
         {
-            UnsubscribeToEvents(application);
+            var events = container.Resolve<Events>();
+            events.UnsubscribeToEvents(application);
 
             Log.CloseAndFlush();
             return Result.Succeeded;

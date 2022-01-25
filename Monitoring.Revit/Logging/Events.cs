@@ -2,16 +2,68 @@
 using Autodesk.Internal.Windows;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Events;
+using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Events;
+using Autodesk.Windows;
 using Serilog;
 using Unity;
 using Unity.Lifetime;
 
 namespace Monitoring.Revit.Logging
 {
-    public static class Events
+    public class Events
     {
-        public static void DocViewActivated(object sender, ViewActivatedEventArgs e)
+        private readonly IUnityContainer _unityContainer;
+
+        public Events(IUnityContainer unityContainer)
+        {
+            _unityContainer = unityContainer;
+        }
+
+
+        public void SubscribeToEvents(UIControlledApplication application)
+        {
+            //TODO: Configure this through appSettings.json
+            application.ViewActivated += DocViewActivated;
+
+            application.ControlledApplication.ApplicationInitialized += Initialized;
+            application.ControlledApplication.DocumentOpening += DocOpening;
+            application.ControlledApplication.DocumentOpened += DocOpened;
+            application.ControlledApplication.DocumentChanged += DocChanged;
+            application.ControlledApplication.DocumentSynchronizingWithCentral += DocSynchronizing;
+            application.ControlledApplication.DocumentSynchronizedWithCentral += DocSynchronized;
+            application.ControlledApplication.DocumentSaving += DocSaving;
+            application.ControlledApplication.DocumentSaved += DocSaved;
+            application.ControlledApplication.DocumentPrinted += DocPrinted;
+            application.ControlledApplication.FileExported += FileExported;
+            application.ControlledApplication.FileImported += FileImported;
+            application.ControlledApplication.FamilyLoadedIntoDocument += FamilyLoaded;
+
+            ComponentManager.ItemExecuted += UiButtonClicked;
+        }
+
+        public void UnsubscribeToEvents(UIControlledApplication application)
+        {
+            //TODO: Configure this through appSettings.json
+            application.ViewActivated -= DocViewActivated;
+
+            application.ControlledApplication.ApplicationInitialized -= Initialized;
+            application.ControlledApplication.DocumentOpening -= DocOpening;
+            application.ControlledApplication.DocumentOpened -= DocOpened;
+            application.ControlledApplication.DocumentSynchronizingWithCentral -= DocSynchronizing;
+            application.ControlledApplication.DocumentSynchronizedWithCentral -= DocSynchronized;
+            application.ControlledApplication.DocumentSaving -= DocSaving;
+            application.ControlledApplication.DocumentSaved -= DocSaved;
+            application.ControlledApplication.DocumentPrinted -= DocPrinted;
+            application.ControlledApplication.FileExported -= FileExported;
+            application.ControlledApplication.FileImported -= FileImported;
+            application.ControlledApplication.FamilyLoadedIntoDocument -= FamilyLoaded;
+
+            ComponentManager.ItemExecuted -= UiButtonClicked;
+        }
+
+
+        public void DocViewActivated(object sender, ViewActivatedEventArgs e)
         {
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
@@ -24,7 +76,7 @@ namespace Monitoring.Revit.Logging
             Log.Information("View Activated: {Data}", data);
         }
 
-        public static void FamilyLoaded(object sender, FamilyLoadedIntoDocumentEventArgs e)
+        public void FamilyLoaded(object sender, FamilyLoadedIntoDocumentEventArgs e)
         {
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
@@ -38,7 +90,7 @@ namespace Monitoring.Revit.Logging
             Log.Information("Family Loaded: {Data}", data);
         }
 
-        public static void FileImported(object sender, FileImportedEventArgs e)
+        public void FileImported(object sender, FileImportedEventArgs e)
         {
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
@@ -52,7 +104,7 @@ namespace Monitoring.Revit.Logging
             Log.Information("File Imported: {Data}", data);
         }
 
-        public static void FileExported(object sender, FileExportedEventArgs e)
+        public void FileExported(object sender, FileExportedEventArgs e)
         {
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
@@ -66,7 +118,7 @@ namespace Monitoring.Revit.Logging
             Log.Information("File Exported: {Data}", data);
         }
 
-        public static void DocPrinted(object sender, DocumentPrintedEventArgs e)
+        public void DocPrinted(object sender, DocumentPrintedEventArgs e)
         {
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
@@ -84,16 +136,16 @@ namespace Monitoring.Revit.Logging
             }
         }
 
-        public static void Initialized(object sender, ApplicationInitializedEventArgs e)
+        public void Initialized(object sender, ApplicationInitializedEventArgs e)
         {
             if (Log.Logger == null) return;
             Log.Information("Revit Application Initialized");
         }
 
-        public static void DocOpening(object sender, DocumentOpeningEventArgs e)
+        public void DocOpening(object sender, DocumentOpeningEventArgs e)
         {
             if (Log.Logger == null) return;
-            if (App.UnityContainer == null) return;
+            if (_unityContainer == null) return;
             if (!e.IsValidObject) return;
             if (e.DocumentType != DocumentType.Project) return;
 
@@ -105,16 +157,16 @@ namespace Monitoring.Revit.Logging
 
             var timer = new Timer("Opening Document", args);
             timer.Start();
-            App.UnityContainer.RegisterInstance(typeof(ITimer), "DocumentOpening", timer, new SingletonLifetimeManager());
+            _unityContainer.RegisterInstance(typeof(ITimer), "DocumentOpening", timer, new SingletonLifetimeManager());
         }
 
-        public static void DocOpened(object sender, DocumentOpenedEventArgs e)
+        public void DocOpened(object sender, DocumentOpenedEventArgs e)
         {
             if (Log.Logger == null) return;
-            if (App.UnityContainer == null) return;
+            if (_unityContainer == null) return;
             if (!e.IsValidObject) return;
 
-            var timer = App.UnityContainer.Resolve<ITimer>("DocumentOpening");
+            var timer = _unityContainer.Resolve<ITimer>("DocumentOpening");
             if (timer == null) return;
             if (!timer.Stopwatch.IsRunning) return;
 
@@ -123,10 +175,10 @@ namespace Monitoring.Revit.Logging
             Log.Information("Revit Document {Document} Opened", e.Document.PathName);
         }
 
-        public static void DocSaving(object sender, DocumentSavingEventArgs e)
+        public void DocSaving(object sender, DocumentSavingEventArgs e)
         {
             if (Log.Logger == null) return;
-            if (App.UnityContainer == null) return;
+            if (_unityContainer == null) return;
             if (!e.IsValidObject) return;
 
             var args = new Dictionary<string, object>
@@ -136,26 +188,26 @@ namespace Monitoring.Revit.Logging
 
             var timer = new Timer("Saving Document", args);
             timer.Start();
-            App.UnityContainer.RegisterInstance(typeof(ITimer), "DocumentSaving", timer,
+            _unityContainer.RegisterInstance(typeof(ITimer), "DocumentSaving", timer,
                 new SingletonLifetimeManager());
         }
 
-        public static void DocSaved(object sender, DocumentSavedEventArgs e)
+        public void DocSaved(object sender, DocumentSavedEventArgs e)
         {
             if (Log.Logger == null) return;
-            if (App.UnityContainer == null) return;
+            if (_unityContainer == null) return;
             if (!e.IsValidObject) return;
 
-            var timer = App.UnityContainer.Resolve<ITimer>("DocumentSaving");
+            var timer = _unityContainer.Resolve<ITimer>("DocumentSaving");
             timer.Stop();
             Log.Information("Revit Document {Document} Saved", e.Document.PathName);
         }
 
 
-        public static void DocSynchronizing(object sender, DocumentSynchronizingWithCentralEventArgs e)
+        public void DocSynchronizing(object sender, DocumentSynchronizingWithCentralEventArgs e)
         {
             if (Log.Logger == null) return;
-            if (App.UnityContainer == null) return;
+            if (_unityContainer == null) return;
             if (!e.IsValidObject) return;
 
             var args = new Dictionary<string, object>
@@ -166,21 +218,21 @@ namespace Monitoring.Revit.Logging
 
             var timer = new Timer("Synchronizing Document", args);
             timer.Start();
-            App.UnityContainer.RegisterInstance(typeof(ITimer), "DocumentSynchronizing", timer,
+            _unityContainer.RegisterInstance(typeof(ITimer), "DocumentSynchronizing", timer,
                 new SingletonLifetimeManager());
         }
 
-        public static void DocSynchronized(object sender, DocumentSynchronizedWithCentralEventArgs e)
+        public void DocSynchronized(object sender, DocumentSynchronizedWithCentralEventArgs e)
         {
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
 
-            var timer = App.UnityContainer.Resolve<ITimer>("DocumentSynchronizing");
+            var timer = _unityContainer.Resolve<ITimer>("DocumentSynchronizing");
             timer.Stop();
             Log.Information("Revit Document {Document} Synchronized", e.Document.PathName);
         }
 
-        public static void DocChanged(object sender, DocumentChangedEventArgs e)
+        public void DocChanged(object sender, DocumentChangedEventArgs e)
         {
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
@@ -195,7 +247,7 @@ namespace Monitoring.Revit.Logging
             Log.Information("Document Modified: {Data}", data);
         }
 
-        public static void UiButtonClicked(object sender, RibbonItemExecutedEventArgs e)
+        public void UiButtonClicked(object sender, RibbonItemExecutedEventArgs e)
         {
             if (Log.Logger == null) return;
             if (e.Item == null) return;

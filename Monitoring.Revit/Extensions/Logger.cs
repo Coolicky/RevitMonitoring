@@ -2,7 +2,6 @@
 using Autodesk.Revit.UI;
 using Microsoft.Extensions.Configuration;
 using Serilog;
-using Serilog.Formatting.Json;
 
 namespace Monitoring.Revit.Extensions
 {
