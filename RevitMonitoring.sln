@@ -2,6 +2,10 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monitoring.Revit", "Monitoring.Revit\Monitoring.Revit.csproj", "{8D422E43-9DE9-4B18-ABBF-2F8C1F8A768E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monitoring.Setup", "Monitoring.Setup\Monitoring.Setup.csproj", "{B8AABDFB-6016-46CE-B7F7-A804F2FD823A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Monitoring.Setup.Wpf", "Monitoring.Setup.Wpf\Monitoring.Setup.Wpf.csproj", "{AE384723-87FC-4E00-80A6-24D592D86826}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -12,5 +16,13 @@ Global
 		{8D422E43-9DE9-4B18-ABBF-2F8C1F8A768E}.Debug|x64.Build.0 = Debug|x64
 		{8D422E43-9DE9-4B18-ABBF-2F8C1F8A768E}.Release|x64.ActiveCfg = Release|x64
 		{8D422E43-9DE9-4B18-ABBF-2F8C1F8A768E}.Release|x64.Build.0 = Release|x64
+		{B8AABDFB-6016-46CE-B7F7-A804F2FD823A}.Debug|x64.ActiveCfg = Debug|x64
+		{B8AABDFB-6016-46CE-B7F7-A804F2FD823A}.Debug|x64.Build.0 = Debug|x64
+		{B8AABDFB-6016-46CE-B7F7-A804F2FD823A}.Release|x64.ActiveCfg = Release|x64
+		{B8AABDFB-6016-46CE-B7F7-A804F2FD823A}.Release|x64.Build.0 = Release|x64
+		{AE384723-87FC-4E00-80A6-24D592D86826}.Debug|x64.ActiveCfg = Debug|x64
+		{AE384723-87FC-4E00-80A6-24D592D86826}.Debug|x64.Build.0 = Debug|x64
+		{AE384723-87FC-4E00-80A6-24D592D86826}.Release|x64.ActiveCfg = Release|x64
+		{AE384723-87FC-4E00-80A6-24D592D86826}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 EndGlobal
