@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Timers;
 using Autodesk.Revit.UI;
 using Serilog;
@@ -9,15 +8,9 @@ namespace Monitoring.Revit.Logging
 {
     public class IdleTimer : IDisposable
     {
-        private struct LASTINPUTINFO
-        {
-            public uint cbSize;
-            public uint dwTime;
-        }
-
         private readonly IntPtr _revitMainHandle;
         private readonly UIApplication _uiApp;
-        private System.Timers.Timer _timer;
+        private readonly System.Timers.Timer _timer;
         private readonly EventConfiguration _eventConfig;
 
         private DateTime _startTime;
@@ -62,17 +55,11 @@ namespace Monitoring.Revit.Logging
             _timer.Start();
         }
 
-        public void StopIdleTimer()
-        {
-            _timer.Stop();
-            LogActivity("Manually Stopped");
-        }
-
         private void TimerElapsed(object sender, ElapsedEventArgs e)
         {
             lock (_lock)
             {
-                var lastInput = GetLastInputInfoValue();
+                var lastInput = WindowsApi.GetLastInputInfoValue();
 
                 if (lastInput - _previousLastInput < 250)
                 {
@@ -83,7 +70,6 @@ namespace Monitoring.Revit.Logging
                     _idleSeconds = 0;
                     _idleStart = DateTime.Now;
                 }
-
                 _previousLastInput = lastInput;
             }
 
@@ -120,17 +106,6 @@ namespace Monitoring.Revit.Logging
             };
             Log.Information("Document Work {Data}", data);
             Reset();
-        }
-
-        [DllImport("user32.dll")]
-        private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
-
-        private static uint GetLastInputInfoValue()
-        {
-            var lastInPut = new LASTINPUTINFO();
-            lastInPut.cbSize = (uint)Marshal.SizeOf(lastInPut);
-            GetLastInputInfo(ref lastInPut);
-            return lastInPut.dwTime;
         }
 
         public void Dispose()

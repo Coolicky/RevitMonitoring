@@ -1,15 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using Monitoring.Revit.Interfaces;
 using Serilog;
 
 namespace Monitoring.Revit.Logging
 {
-    public class Timer : ITimer
+    public class EventTimer : IEventTimer
     {
         private readonly string _operationName;
         private Dictionary<string, object> _args;
 
-        public Timer(string operationName)
+        public EventTimer(string operationName)
         {
             _operationName = operationName;
             _args = new Dictionary<string, object>();

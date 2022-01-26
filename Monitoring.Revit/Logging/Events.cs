@@ -13,10 +13,10 @@ namespace Monitoring.Revit.Logging
 {
     public class Events
     {
-        private Timer _openingTimer;
-        private Timer _savingTimer;
-        private Timer _savingAsTimer;
-        private Timer _synchronizingTimer;
+        private readonly EventTimer _openingTimer;
+        private readonly EventTimer _savingTimer;
+        private readonly EventTimer _savingAsTimer;
+        private readonly EventTimer _synchronizingTimer;
         private readonly EventConfiguration _eventConfig;
         private readonly IdleTimer _idleTimer;
 
@@ -24,17 +24,16 @@ namespace Monitoring.Revit.Logging
         {
             _eventConfig = eventConfig;
             _idleTimer = idleTimer;
-            _openingTimer = new Timer("Opening Document");
-            _savingTimer = new Timer("Saving Document");
-            _savingAsTimer = new Timer("SavingAs Document");
-            _synchronizingTimer = new Timer("Synchronizing Document");
+            _openingTimer = new EventTimer("Opening Document");
+            _savingTimer = new EventTimer("Saving Document");
+            _savingAsTimer = new EventTimer("SavingAs Document");
+            _synchronizingTimer = new EventTimer("Synchronizing Document");
         }
 
         public void SubscribeToEvents(UIControlledApplication application)
         {
             if (_eventConfig.ViewChanged || _eventConfig.TimeSpent)
                 application.ViewActivated += DocViewActivated;
-
             if (_eventConfig.Initialized)
                 application.ControlledApplication.ApplicationInitialized += Initialized;
             if (_eventConfig.Opening)
@@ -42,7 +41,6 @@ namespace Monitoring.Revit.Logging
                 application.ControlledApplication.DocumentOpening += DocOpening;
                 application.ControlledApplication.DocumentOpened += DocOpened;
             }
-
             if (_eventConfig.Changes)
                 application.ControlledApplication.DocumentChanged += DocChanged;
             if (_eventConfig.Synchronizing)
@@ -50,7 +48,6 @@ namespace Monitoring.Revit.Logging
                 application.ControlledApplication.DocumentSynchronizingWithCentral += DocSynchronizing;
                 application.ControlledApplication.DocumentSynchronizedWithCentral += DocSynchronized;
             }
-
             if (_eventConfig.Saving)
             {
                 application.ControlledApplication.DocumentSaving += DocSaving;
@@ -59,7 +56,6 @@ namespace Monitoring.Revit.Logging
                 application.ControlledApplication.DocumentSavingAs += DocSavingAs;
                 application.ControlledApplication.DocumentSavedAs += DocSavedAs;
             }
-
             if (_eventConfig.Printing)
                 application.ControlledApplication.DocumentPrinted += DocPrinted;
             if (_eventConfig.Exporting)
@@ -68,7 +64,6 @@ namespace Monitoring.Revit.Logging
                 application.ControlledApplication.FileImported += FileImported;
             if (_eventConfig.FamilyLoading)
                 application.ControlledApplication.FamilyLoadedIntoDocument += FamilyLoaded;
-
             if (_eventConfig.UiClicks)
                 ComponentManager.ItemExecuted += UiButtonClicked;
         }
@@ -77,7 +72,6 @@ namespace Monitoring.Revit.Logging
         {
             if (_eventConfig.ViewChanged || _eventConfig.TimeSpent)
                 application.ViewActivated -= DocViewActivated;
-
             if (_eventConfig.Initialized)
                 application.ControlledApplication.ApplicationInitialized -= Initialized;
             if (_eventConfig.Opening || _eventConfig.TimeSpent)
@@ -85,7 +79,6 @@ namespace Monitoring.Revit.Logging
                 application.ControlledApplication.DocumentOpening -= DocOpening;
                 application.ControlledApplication.DocumentOpened -= DocOpened;
             }
-
             if (_eventConfig.Changes)
                 application.ControlledApplication.DocumentChanged -= DocChanged;
             if (_eventConfig.Synchronizing)
@@ -93,13 +86,11 @@ namespace Monitoring.Revit.Logging
                 application.ControlledApplication.DocumentSynchronizingWithCentral -= DocSynchronizing;
                 application.ControlledApplication.DocumentSynchronizedWithCentral -= DocSynchronized;
             }
-
             if (_eventConfig.Saving)
             {
                 application.ControlledApplication.DocumentSaving -= DocSaving;
                 application.ControlledApplication.DocumentSaved -= DocSaved;
             }
-
             if (_eventConfig.Printing)
                 application.ControlledApplication.DocumentPrinted -= DocPrinted;
             if (_eventConfig.Exporting)
@@ -108,7 +99,6 @@ namespace Monitoring.Revit.Logging
                 application.ControlledApplication.FileImported -= FileImported;
             if (_eventConfig.FamilyLoading)
                 application.ControlledApplication.FamilyLoadedIntoDocument -= FamilyLoaded;
-
             if (_eventConfig.UiClicks)
                 ComponentManager.ItemExecuted -= UiButtonClicked;
         }
@@ -217,24 +207,21 @@ namespace Monitoring.Revit.Logging
 
         private void Initialized(object sender, ApplicationInitializedEventArgs e)
         {
-            var type = sender.GetType();
             if (Log.Logger == null) return;
             Log.Information("Revit Application Initialized");
         }
 
         private void DocOpening(object sender, DocumentOpeningEventArgs e)
         {
+            if (!_eventConfig.Opening) return;
             if (Log.Logger == null) return;
             if (!e.IsValidObject) return;
             if (e.DocumentType != DocumentType.Project) return;
 
-            if (_eventConfig.Opening)
-            {
-                _openingTimer.AddArgs("DocumentPath", e.PathName);
-                _openingTimer.AddArgs("DocumentType", e.DocumentType);
+            _openingTimer.AddArgs("DocumentPath", e.PathName);
+            _openingTimer.AddArgs("DocumentType", e.DocumentType);
 
-                _openingTimer.Start();
-            }
+            _openingTimer.Start();
         }
 
         private void DocOpened(object sender, DocumentOpenedEventArgs e)

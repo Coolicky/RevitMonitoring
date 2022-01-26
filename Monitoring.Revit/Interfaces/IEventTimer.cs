@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
 
-namespace Monitoring.Revit.Logging
+namespace Monitoring.Revit.Interfaces
 {
-    public interface ITimer
+    public interface IEventTimer
     {
         Stopwatch Stopwatch { get; set; }
         void AddArgs(string key, object value);

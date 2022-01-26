@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Reflection;
 using Autodesk.Revit.UI;
-using Autodesk.Revit.UI.Events;
-using Autodesk.Windows;
-using Microsoft.Extensions.Configuration;
 using Monitoring.Revit.Extensions;
 using Monitoring.Revit.Logging;
 using Revit.DependencyInjection.Unity.Applications;
