@@ -10,7 +10,7 @@ namespace Monitoring.Revit.Logging
     {
         private readonly IntPtr _revitMainHandle;
         private readonly UIApplication _uiApp;
-        private readonly System.Timers.Timer _timer;
+        private readonly Timer _timer;
         private readonly EventConfiguration _eventConfig;
 
         private DateTime _startTime;
