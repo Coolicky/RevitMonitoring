@@ -26,6 +26,8 @@ namespace Monitoring.Setup.Wpf
             var divider = (int)values[1] > 0 ? (int)values[1] : 1;
             var divide = divided / divider;
             var percentage = Math.Round(divide * 100, MidpointRounding.ToEven);
+            if (percentage < 0) return 0;
+            if (percentage > 100) return 100;
             return $"{percentage}%";
         }
 

@@ -35,6 +35,11 @@ namespace Monitoring.Revit.Logging
         [DllImport("user32.dll")]
         private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
 
+        /// <summary>
+        /// Get Window Title
+        /// </summary>
+        /// <param name="handle">Handle of the Window</param>
+        /// <returns>Window Title</returns>
         public static string GetWindowTitle(IntPtr handle)
         {
             const int nChars = 256;
@@ -43,6 +48,11 @@ namespace Monitoring.Revit.Logging
             return GetWindowText(handle, buff, nChars) > 0 ? buff.ToString() : null;
         }
 
+        /// <summary>
+        /// Gets Active Window title.
+        /// If Window is not top level window searches for owner and reports its title.
+        /// </summary>
+        /// <returns>Window Title</returns>
         public static string GetActiveWindowTitle()
         {
             var handle = GetForegroundWindow();
@@ -51,6 +61,10 @@ namespace Monitoring.Revit.Logging
             return parentHandle == IntPtr.Zero ? GetWindowTitle(handle) : GetWindowTitle(parentHandle);
         }
 
+        /// <summary>
+        /// Gets tick of last user input
+        /// </summary>
+        /// <returns>Tick as uint</returns>
         public static uint GetLastInputInfoValue()
         {
             var lastInPut = new LASTINPUTINFO();
