@@ -20,7 +20,7 @@
       <None Update="PackageContents.xml">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-      <None Update="coolicky.ico">
+      <None Update="PM.ico">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>

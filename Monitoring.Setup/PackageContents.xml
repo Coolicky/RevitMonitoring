@@ -2,9 +2,9 @@
 <!--TODO: GET VERSION FROM SCRIPT-->
 <ApplicationPackage SchemaVersion="1.0" AutodeskProduct="Revit" Name="Revit Monitoring"
                     Description="Revit Monitoring" AppVersion="1.0.0" FriendlyVersion="1.0.0"
-                    ProductType="Application" SupportedLocales="Enu" AppNameSpace="https://github.com/Coolicky" Author="Coolicky"
+                    ProductType="Application" SupportedLocales="Enu" AppNameSpace="https://www.pmgroup-global.com/" Author="PM Group"
                     ProductCode="0D7C5A15-19C5-4CFA-9A9B-5152D718D53D">
-    <CompanyDetails Name="Coolicky"/>
+    <CompanyDetails Name="PM Group"/>
     <Components Description="2020 parts">
         <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2020" SeriesMax="R2020"/>
         <ComponentEntry AppName="Revit Monitoring" Version="1.0.0"

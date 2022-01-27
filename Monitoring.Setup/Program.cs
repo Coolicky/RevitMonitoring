@@ -60,7 +60,7 @@ namespace Monitoring.Setup
                 ControlPanelInfo =
                 {
                     Manufacturer = Environment.UserName,
-                    ProductIcon = @"coolicky.ico"
+                    ProductIcon = @"PM.ico"
                 },
                 LaunchConditions = new List<LaunchCondition>
                 {

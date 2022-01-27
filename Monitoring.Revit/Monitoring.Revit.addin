@@ -5,8 +5,8 @@
         <Assembly>Monitoring.Revit.dll</Assembly>
         <AddInId>49FB7FB8-7DB5-4160-B3F6-89BD9C1FCD28</AddInId>
         <FullClassName>Monitoring.Revit.App</FullClassName>
-        <VendorId>Coolicky</VendorId>
-        <VendorDescription>Coolicky</VendorDescription>
+        <VendorId>PM Group</VendorId>
+        <VendorDescription>PM Group</VendorDescription>
         <AllowLoadingIntoExistingSession>true</AllowLoadingIntoExistingSession>
     </AddIn>
 </RevitAddIns>
