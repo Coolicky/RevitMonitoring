@@ -22,14 +22,16 @@ namespace Monitoring.Setup.Wpf
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            var divide = System.Convert.ToDouble((int)values[0]) / (int)values[1];
+            var divided = System.Convert.ToDouble((int)values[0]);
+            var divider = (int)values[1] > 0 ? (int)values[1] : 1;
+            var divide = divided / divider;
             var percentage = Math.Round(divide * 100, MidpointRounding.ToEven);
             return $"{percentage}%";
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            return null;
         }
     }
     
@@ -47,7 +49,7 @@ namespace Monitoring.Setup.Wpf
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            return null;
         }
     }
 }

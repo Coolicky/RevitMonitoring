@@ -15,12 +15,11 @@ namespace Monitoring.Setup.Wpf
         private void Application_Startup(object sender, StartupEventArgs e)
         {
             DoEvents();
-
+            
             byte[] msiData = Monitoring.Setup.Wpf.Properties.Resources.Msi_File;
             MsiFile = Path.Combine(Path.GetTempPath(), "MyProduct.msi");
-
-            if (!File.Exists(MsiFile) || new FileInfo(MsiFile).Length != msiData.Length)
-                File.WriteAllBytes(MsiFile, msiData);
+            
+            File.WriteAllBytes(MsiFile, msiData);
         }
 
         private static void DoEvents()

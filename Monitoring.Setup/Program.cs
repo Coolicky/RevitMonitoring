@@ -5,11 +5,13 @@ using System.IO;
 using System.Text;
 using WixSharp;
 using WixSharp.CommonTasks;
+using WixSharp.UI;
 using File = System.IO.File;
+using Project = WixSharp.Project;
 
 namespace Monitoring.Setup
 {
-    internal class Program
+    internal static class Program
     {
         private static readonly DateTime ProjectStartedDate = new DateTime(year: 2022, month: 1, day: 26);
 #if DEBUG
@@ -17,7 +19,11 @@ namespace Monitoring.Setup
 #else
         const string Configuration = "Release";
 #endif
-        const string ProjectName = "Monitoring.Setup";
+        static readonly string BuildDirectory = $"\\bin\\x64\\{Configuration}\\net48";
+        private const string PluginProjectName = "Monitoring.Revit";
+        private const string SetupProjectName = "Monitoring.Setup";
+        private const string WpfProjectName = "Monitoring.Setup.Wpf";
+        const string ProjectName = "Revit Monitoring";
         const string OutputName = "Monitoring.Setup";
         const string OutputDir = "output";
 
@@ -29,7 +35,7 @@ namespace Monitoring.Setup
             var project = CreateProject(pluginDirectory);
 
             Console.WriteLine($"Building Installer!");
-            var buildMsi = project.BuildMsi();
+            project.BuildMsi();
 
             CopyMsiFile(project);
             BuildWpfProject();
@@ -73,13 +79,17 @@ namespace Monitoring.Setup
         {
             var directory = Directory.GetCurrentDirectory();
             var msiFile = Path.Combine(directory, project.OutDir, $"{project.OutFileName}.msi");
-            var projectDirectory = directory.Replace($"\\bin\\x64\\{Configuration}\\net48", "");
+            var projectDirectory = directory.Replace(BuildDirectory, "");
             var msiFolder = Path.Combine(projectDirectory, project.OutDir);
-            var msiCopy = Path.Combine(msiFolder, $"Monitoring.Setup.msi");
+            var msiCopy = Path.Combine(msiFolder, $"{OutputName}.msi");
             Directory.CreateDirectory(Path.GetDirectoryName(msiCopy) ?? throw new InvalidOperationException());
             Directory.GetFiles(msiFolder).ForEach(File.Delete);
             Console.WriteLine($"Copying MSI from {msiFile} to \n{msiCopy}");
             File.Copy(msiFile, msiCopy);
+
+            var parser = new MsiParser(msiCopy);
+            var x =parser.GetProductName();
+            var y = x;
         }
 
         private static string GetInstallationDirectory()
@@ -91,10 +101,9 @@ namespace Monitoring.Setup
         private static string BuildPluginProject()
         {
             var directory = Directory.GetCurrentDirectory();
-            Console.WriteLine($"Current Directory: {directory}");
-            var pluginDirectory = directory.Replace(".Setup", ".Revit");
+            var pluginDirectory = directory.Replace(SetupProjectName, PluginProjectName);
             var pluginProject =
-                pluginDirectory.Replace($"bin\\x64\\{Configuration}\\net48", "Monitoring.Revit.csproj");
+                pluginDirectory.Replace(BuildDirectory, $"{PluginProjectName}.csproj");
 
             Console.WriteLine($"Plugin Project: {pluginProject}");
 
@@ -121,11 +130,10 @@ namespace Monitoring.Setup
         private static void BuildWpfProject()
         {
             var directory = Directory.GetCurrentDirectory();
-            Console.WriteLine($"Current Directory: {directory}");
-            var wpfDirectory = directory.Replace(".Setup", ".Setup.Wpf");
+            var wpfDirectory = directory.Replace(SetupProjectName, WpfProjectName);
             var wpfProjectDirectory =
-                wpfDirectory.Replace($"\\bin\\x64\\{Configuration}\\net48", "");
-            var wpfProject = Path.Combine(wpfProjectDirectory, "Monitoring.Setup.Wpf.csproj");
+                wpfDirectory.Replace(BuildDirectory, "");
+            var wpfProject = Path.Combine(wpfProjectDirectory, $"{WpfProjectName}.csproj");
 
             Console.WriteLine($"Installer Wpf Project: {wpfProject}");
 
@@ -150,8 +158,8 @@ namespace Monitoring.Setup
 
         private static Version GetVersion()
         {
-            var majorVersion = 0;
-            var minorVersion = 7;
+            const int majorVersion = 0;
+            const int minorVersion = 7;
             var daysSinceProjectStarted = (int)((DateTime.UtcNow - ProjectStartedDate).TotalDays);
             var minutesSinceMidnight = (int)DateTime.UtcNow.TimeOfDay.TotalMinutes;
             var version = $"{majorVersion}.{minorVersion}.{daysSinceProjectStarted}.{minutesSinceMidnight}";

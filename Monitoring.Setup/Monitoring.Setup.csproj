@@ -28,4 +28,8 @@
     <ItemGroup>
       <Reference Include="System.Windows.Forms" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="output" />
+    </ItemGroup>
 </Project>
