@@ -24,7 +24,6 @@
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
             <local:ReverseBoolConverter x:Key="ReverseBoolConverter" />
-            <local:MultiBoolAndConverter x:Key="MultiBoolAndConverter" />
             <local:MultiBoolAndConverterToVisibility x:Key="MultiBoolAndConverterToVisibility" />
             <local:ProgressPercentageConverter x:Key="ProgressPercentageConverter"/>
             <Geometry x:Key="LargeCircle">M250,495A245,245,0,0,1,76.76,76.76a245,245,0,0,1,346.48,0l-99,99a105,105,0,1,0,0,148.5l99,99A243.37,243.37,0,0,1,250,495Z M250,495A245,245,0,0,1,76.76,76.76a245,245,0,0,1,346.48,0l-99,99a105,105,0,1,0,0,148.5l99,99A243.37,243.37,0,0,1,250,495Z</Geometry>

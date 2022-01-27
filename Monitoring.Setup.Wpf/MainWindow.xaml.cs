@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Threading;
 
 namespace Monitoring.Setup.Wpf
@@ -20,29 +19,24 @@ namespace Monitoring.Setup.Wpf
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            App.HideSplashScreen();
-
-            Setup = new MyProductSetup(App.MsiFile);
-            Setup.InUiThread = this.InUiThread;
+            Setup = new MyProductSetup(App.MsiFile)
+            {
+                InUiThread = InUiThread
+            };
             DataContext = Setup;
         }
 
-        public void InUiThread(Action action)
+        private void InUiThread(Action action)
         {
-            if (this.Dispatcher.CheckAccess())
+            if (Dispatcher.CheckAccess())
                 action();
             else
                 Dispatcher.BeginInvoke(DispatcherPriority.Normal, action);
         }
 
-        private void Window_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            DragMove();
-        }
-
         private void Minimize_Click(object sender, RoutedEventArgs e)
         {
-            WindowState = System.Windows.WindowState.Minimized;
+            WindowState = WindowState.Minimized;
         }
 
         private void Close_Click(object sender, RoutedEventArgs e)

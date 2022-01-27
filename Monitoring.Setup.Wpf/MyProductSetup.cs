@@ -1,5 +1,4 @@
-﻿using System;
-using WixSharp.UI;
+﻿using WixSharp.UI;
 
 namespace Monitoring.Setup.Wpf
 {
@@ -29,7 +28,6 @@ namespace Monitoring.Setup.Wpf
         {
             //The MSI will abort any attempt to start unless CUSTOM_UI is set. This  a feature for preventing starting the MSI without this custom GUI.
             base.StartRepair("CUSTOM_UI=true");
-            SetupBegan = true;
         }
 
         public void StartChange()

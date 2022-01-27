@@ -17,25 +17,7 @@ namespace Monitoring.Setup.Wpf
             return value != null && !(bool)value;
         }
     }
-    
-    public class MultiBoolAndConverter : IMultiValueConverter
-    {
-        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
-        {
-            foreach (bool value in values)
-            {
-                if (!value) return false;
-            }
 
-            return true;
-        }
-
-        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-    }
-    
     public class ProgressPercentageConverter : IMultiValueConverter
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
@@ -68,26 +50,4 @@ namespace Monitoring.Setup.Wpf
             throw new NotImplementedException();
         }
     }
-    
-    
-    public class MultiBoolOrConverter : IMultiValueConverter
-    {
-        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
-        {
-            var yes = false;
-            foreach (bool value in values)
-            {
-                if (value) yes = true;
-            }
-
-            return yes;
-        }
-
-        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-    }
-    
-    
 }
