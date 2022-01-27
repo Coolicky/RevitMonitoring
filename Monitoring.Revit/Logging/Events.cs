@@ -32,313 +32,411 @@ namespace Monitoring.Revit.Logging
 
         public void SubscribeToEvents(UIControlledApplication application)
         {
-            if (_eventConfig.ViewChanged || _eventConfig.TimeSpent)
-                application.ViewActivated += DocViewActivated;
-            if (_eventConfig.Initialized)
-                application.ControlledApplication.ApplicationInitialized += Initialized;
-            if (_eventConfig.Opening)
-            {
-                application.ControlledApplication.DocumentOpening += DocOpening;
-                application.ControlledApplication.DocumentOpened += DocOpened;
-            }
-            if (_eventConfig.Changes)
-                application.ControlledApplication.DocumentChanged += DocChanged;
-            if (_eventConfig.Synchronizing)
-            {
-                application.ControlledApplication.DocumentSynchronizingWithCentral += DocSynchronizing;
-                application.ControlledApplication.DocumentSynchronizedWithCentral += DocSynchronized;
-            }
-            if (_eventConfig.Saving)
-            {
-                application.ControlledApplication.DocumentSaving += DocSaving;
-                application.ControlledApplication.DocumentSaved += DocSaved;
+            if (Log.Logger == null) return;
+            if (application?.ControlledApplication == null) return;
 
-                application.ControlledApplication.DocumentSavingAs += DocSavingAs;
-                application.ControlledApplication.DocumentSavedAs += DocSavedAs;
+            try
+            {
+                if (_eventConfig.ViewChanged || _eventConfig.TimeSpent)
+                    application.ViewActivated += DocViewActivated;
+                if (_eventConfig.Initialized)
+                    application.ControlledApplication.ApplicationInitialized += Initialized;
+                if (_eventConfig.Opening)
+                {
+                    application.ControlledApplication.DocumentOpening += DocOpening;
+                    application.ControlledApplication.DocumentOpened += DocOpened;
+                }
+
+                if (_eventConfig.Changes)
+                    application.ControlledApplication.DocumentChanged += DocChanged;
+                if (_eventConfig.Synchronizing)
+                {
+                    application.ControlledApplication.DocumentSynchronizingWithCentral += DocSynchronizing;
+                    application.ControlledApplication.DocumentSynchronizedWithCentral += DocSynchronized;
+                }
+
+                if (_eventConfig.Saving)
+                {
+                    application.ControlledApplication.DocumentSaving += DocSaving;
+                    application.ControlledApplication.DocumentSaved += DocSaved;
+
+                    application.ControlledApplication.DocumentSavingAs += DocSavingAs;
+                    application.ControlledApplication.DocumentSavedAs += DocSavedAs;
+                }
+
+                if (_eventConfig.Printing)
+                    application.ControlledApplication.DocumentPrinted += DocPrinted;
+                if (_eventConfig.Exporting)
+                    application.ControlledApplication.FileExported += FileExported;
+                if (_eventConfig.Importing)
+                    application.ControlledApplication.FileImported += FileImported;
+                if (_eventConfig.FamilyLoading)
+                    application.ControlledApplication.FamilyLoadedIntoDocument += FamilyLoaded;
+                if (_eventConfig.UiClicks)
+                    ComponentManager.ItemExecuted += UiButtonClicked;
             }
-            if (_eventConfig.Printing)
-                application.ControlledApplication.DocumentPrinted += DocPrinted;
-            if (_eventConfig.Exporting)
-                application.ControlledApplication.FileExported += FileExported;
-            if (_eventConfig.Importing)
-                application.ControlledApplication.FileImported += FileImported;
-            if (_eventConfig.FamilyLoading)
-                application.ControlledApplication.FamilyLoadedIntoDocument += FamilyLoaded;
-            if (_eventConfig.UiClicks)
-                ComponentManager.ItemExecuted += UiButtonClicked;
+            catch (Exception e)
+            {
+                Log.Error(e, "Error");
+            }
         }
 
         public void UnsubscribeToEvents(UIControlledApplication application)
         {
-            if (_eventConfig.ViewChanged || _eventConfig.TimeSpent)
-                application.ViewActivated -= DocViewActivated;
-            if (_eventConfig.Initialized)
-                application.ControlledApplication.ApplicationInitialized -= Initialized;
-            if (_eventConfig.Opening || _eventConfig.TimeSpent)
+            if (application?.ControlledApplication == null) return;
+            try
             {
-                application.ControlledApplication.DocumentOpening -= DocOpening;
-                application.ControlledApplication.DocumentOpened -= DocOpened;
+                if (_eventConfig.ViewChanged || _eventConfig.TimeSpent)
+                    application.ViewActivated -= DocViewActivated;
+                if (_eventConfig.Initialized)
+                    application.ControlledApplication.ApplicationInitialized -= Initialized;
+                if (_eventConfig.Opening || _eventConfig.TimeSpent)
+                {
+                    application.ControlledApplication.DocumentOpening -= DocOpening;
+                    application.ControlledApplication.DocumentOpened -= DocOpened;
+                }
+
+                if (_eventConfig.Changes)
+                    application.ControlledApplication.DocumentChanged -= DocChanged;
+                if (_eventConfig.Synchronizing)
+                {
+                    application.ControlledApplication.DocumentSynchronizingWithCentral -= DocSynchronizing;
+                    application.ControlledApplication.DocumentSynchronizedWithCentral -= DocSynchronized;
+                }
+
+                if (_eventConfig.Saving)
+                {
+                    application.ControlledApplication.DocumentSaving -= DocSaving;
+                    application.ControlledApplication.DocumentSaved -= DocSaved;
+                }
+
+                if (_eventConfig.Printing)
+                    application.ControlledApplication.DocumentPrinted -= DocPrinted;
+                if (_eventConfig.Exporting)
+                    application.ControlledApplication.FileExported -= FileExported;
+                if (_eventConfig.Importing)
+                    application.ControlledApplication.FileImported -= FileImported;
+                if (_eventConfig.FamilyLoading)
+                    application.ControlledApplication.FamilyLoadedIntoDocument -= FamilyLoaded;
+                if (_eventConfig.UiClicks)
+                    ComponentManager.ItemExecuted -= UiButtonClicked;
             }
-            if (_eventConfig.Changes)
-                application.ControlledApplication.DocumentChanged -= DocChanged;
-            if (_eventConfig.Synchronizing)
+            catch (Exception e)
             {
-                application.ControlledApplication.DocumentSynchronizingWithCentral -= DocSynchronizing;
-                application.ControlledApplication.DocumentSynchronizedWithCentral -= DocSynchronized;
+                Log.Error(e, "Error");
             }
-            if (_eventConfig.Saving)
-            {
-                application.ControlledApplication.DocumentSaving -= DocSaving;
-                application.ControlledApplication.DocumentSaved -= DocSaved;
-            }
-            if (_eventConfig.Printing)
-                application.ControlledApplication.DocumentPrinted -= DocPrinted;
-            if (_eventConfig.Exporting)
-                application.ControlledApplication.FileExported -= FileExported;
-            if (_eventConfig.Importing)
-                application.ControlledApplication.FileImported -= FileImported;
-            if (_eventConfig.FamilyLoading)
-                application.ControlledApplication.FamilyLoadedIntoDocument -= FamilyLoaded;
-            if (_eventConfig.UiClicks)
-                ComponentManager.ItemExecuted -= UiButtonClicked;
         }
 
         private void DocViewActivated(object sender, ViewActivatedEventArgs e)
         {
-            if (Log.Logger == null) return;
-            if (!e.IsValidObject) return;
-
             if (_eventConfig.ViewChanged)
             {
-                var documentPath = e.Document.PathName;
-                var data = new Dictionary<string, object>
+                try
                 {
-                    { "viewName", e.CurrentActiveView.Name },
-                    { "documentPath", documentPath },
-                    { "documentTitle", e.Document.Title }
-                };
-                Log.Information("View Activated: {Data}", data);
+                    var documentPath = e.Document.PathName;
+                    var data = new Dictionary<string, object>
+                    {
+                        { "viewName", e.CurrentActiveView.Name },
+                        { "documentPath", documentPath },
+                        { "documentTitle", e.Document.Title }
+                    };
+                    Log.Information("View Activated: {Data}", data);
+                }
+                catch (Exception exception)
+                {
+                    Log.Error(exception, "Error");
+                }
             }
 
             if (_eventConfig.TimeSpent)
             {
-                var documentChanged = e.CurrentActiveView.Document.PathName != e.PreviousActiveView.Document.PathName;
-                if (documentChanged)
+                try
                 {
-                    _idleTimer.ChangeDocument();
+                    var documentChanged =
+                        e.CurrentActiveView?.Document?.PathName != e.PreviousActiveView?.Document?.PathName;
+                    if (documentChanged)
+                    {
+                        _idleTimer.ChangeDocument();
+                    }
+                }
+                catch (Exception exception)
+                {
+                    Log.Error(exception, "Error");
                 }
             }
         }
 
         private void FamilyLoaded(object sender, FamilyLoadedIntoDocumentEventArgs e)
         {
-            if (Log.Logger == null) return;
-            if (!e.IsValidObject) return;
-
-            var documentPath = e.Document.PathName;
-            var data = new Dictionary<string, object>
+            try
             {
-                { "familyName", e.FamilyName },
-                { "familyPath", e.FamilyPath },
-                { "documentPath", documentPath },
-                { "documentTitle", e.Document.Title },
-                { "override", e.OriginalFamilyId == null && e.OriginalFamilyId == ElementId.InvalidElementId }
-            };
-            Log.Information("Family Loaded: {Data}", data);
+                var documentPath = e.Document.PathName;
+                var data = new Dictionary<string, object>
+                {
+                    { "familyName", e.FamilyName },
+                    { "familyPath", e.FamilyPath },
+                    { "documentPath", documentPath },
+                    { "documentTitle", e.Document.Title },
+                    { "override", e.OriginalFamilyId == null && e.OriginalFamilyId == ElementId.InvalidElementId }
+                };
+                Log.Information("Family Loaded: {Data}", data);
+            }
+            catch (Exception exception)
+            {
+                Log.Error(exception, "Error");
+            }
         }
 
         private void FileImported(object sender, FileImportedEventArgs e)
         {
-            if (Log.Logger == null) return;
-            if (!e.IsValidObject) return;
-
-            var documentPath = e.Document.PathName;
-            var data = new Dictionary<string, object>
+            try
             {
-                { "fileFormat", e.Format },
-                { "path", e.Path },
-                { "documentPath", documentPath },
-                { "documentTitle", e.Document.Title },
-            };
-            Log.Information("File Imported: {Data}", data);
+                var documentPath = e.Document.PathName;
+                var data = new Dictionary<string, object>
+                {
+                    { "fileFormat", e.Format },
+                    { "path", e.Path },
+                    { "documentPath", documentPath },
+                    { "documentTitle", e.Document.Title },
+                };
+                Log.Information("File Imported: {Data}", data);
+            }
+            catch (Exception exception)
+            {
+                Log.Error(exception, "Error");
+            }
         }
 
         private void FileExported(object sender, FileExportedEventArgs e)
         {
-            if (Log.Logger == null) return;
-            if (!e.IsValidObject) return;
-
-            var documentPath = e.Document.PathName;
-            var data = new Dictionary<string, object>
+            try
             {
-                { "fileFormat", e.Format },
-                { "path", e.Path },
-                { "documentPath", documentPath },
-                { "documentTitle", e.Document.Title },
-            };
-            Log.Information("File Exported: {Data}", data);
+                var documentPath = e.Document.PathName;
+                var data = new Dictionary<string, object>
+                {
+                    { "fileFormat", e.Format },
+                    { "path", e.Path },
+                    { "documentPath", documentPath },
+                    { "documentTitle", e.Document.Title },
+                };
+                Log.Information("File Exported: {Data}", data);
+            }
+            catch (Exception exception)
+            {
+                Log.Error(exception, "Error");
+            }
         }
 
         private void DocPrinted(object sender, DocumentPrintedEventArgs e)
         {
-            if (Log.Logger == null) return;
-            if (!e.IsValidObject) return;
-
-            var printedViewIds = e.GetPrintedViewElementIds();
-
-            var documentPath = e.Document.PathName;
-            foreach (var viewId in printedViewIds)
+            try
             {
-                var view = e.Document.GetElement(viewId);
-                var isSheet = view is ViewSheet;
-                var viewName = view.Name;
-                if (isSheet)
-                    viewName = $"{((ViewSheet)view).SheetNumber}-{viewName}";
-                
-                var data = new Dictionary<string, object>
+                var printedViewIds = e.GetPrintedViewElementIds();
+
+                var documentPath = e.Document.PathName;
+                foreach (var viewId in printedViewIds)
                 {
-                    { isSheet ? "sheet" : "view",  viewName },
-                    { "documentPath", documentPath },
-                    { "documentTitle", e.Document.Title },
-                };
-                Log.Information("Printed Document: {Data}", data);
+                    var view = e.Document.GetElement(viewId);
+                    var isSheet = view is ViewSheet;
+                    var viewName = view.Name;
+                    if (isSheet)
+                        viewName = $"{((ViewSheet)view).SheetNumber}-{viewName}";
+
+                    var data = new Dictionary<string, object>
+                    {
+                        { isSheet ? "sheet" : "view", viewName },
+                        { "documentPath", documentPath },
+                        { "documentTitle", e.Document.Title },
+                    };
+                    Log.Information("Printed Document: {Data}", data);
+                }
+            }
+            catch (Exception exception)
+            {
+                Log.Error(exception, "Error");
             }
         }
 
         private void Initialized(object sender, ApplicationInitializedEventArgs e)
         {
-            if (Log.Logger == null) return;
-            Log.Information("Revit Application Initialized");
+            try
+            {
+                Log.Information("Revit Application Initialized");
+            }
+            catch (Exception exception)
+            {
+                Log.Error(exception, "Error");
+            }
         }
 
         private void DocOpening(object sender, DocumentOpeningEventArgs e)
         {
-            if (!_eventConfig.Opening) return;
-            if (Log.Logger == null) return;
-            if (!e.IsValidObject) return;
-            if (e.DocumentType != DocumentType.Project) return;
+            try
+            {
+                if (!_eventConfig.Opening) return;
 
-            _openingTimer.AddArgs("DocumentPath", e.PathName);
-            _openingTimer.AddArgs("DocumentType", e.DocumentType);
+                _openingTimer.AddArgs("DocumentPath", e.PathName);
+                _openingTimer.AddArgs("DocumentType", e.DocumentType);
 
-            _openingTimer.Start();
+                _openingTimer.Start();
+            }
+            catch (Exception exception)
+            {
+                Log.Error(exception, "Error");
+            }
         }
 
         private void DocOpened(object sender, DocumentOpenedEventArgs e)
         {
-            if (Log.Logger == null) return;
-            if (!e.IsValidObject) return;
-
             if (_eventConfig.Opening)
             {
-                if (_openingTimer == null) return;
-                if (!_openingTimer.Stopwatch.IsRunning) return;
+                try
+                {
+                    if (_openingTimer == null) return;
+                    if (!_openingTimer.Stopwatch.IsRunning) return;
 
-                var documentPath = e.Document.PathName;
-                _openingTimer.AddArgs("documentPath", documentPath);
-                _openingTimer.AddArgs("documentTitle", e.Document.Title);
-                _openingTimer.AddArgs("documentSize", GetDocumentSize(documentPath));
-                _openingTimer.Stop();
+                    var documentPath = e.Document.PathName;
+                    _openingTimer.AddArgs("documentPath", documentPath);
+                    _openingTimer.AddArgs("documentTitle", e.Document.Title);
+                    _openingTimer.AddArgs("documentSize", GetDocumentSize(documentPath));
+                    _openingTimer.Stop();
+                }
+                catch (Exception exception)
+                {
+                    Log.Error(exception, "Error");
+                }
             }
 
             if (_eventConfig.TimeSpent)
             {
-                _idleTimer.StartIdleTimer();
+                try
+                {
+                    _idleTimer.StartIdleTimer();
+                }
+                catch (Exception exception)
+                {
+                    Log.Error(exception, "Error");
+                }
             }
         }
 
         private void DocSaving(object sender, DocumentSavingEventArgs e)
         {
-            if (Log.Logger == null) return;
-            if (!e.IsValidObject) return;
-
-            _savingTimer.Start();
+            try
+            {
+                _savingTimer.Start();
+            }
+            catch (Exception exception)
+            {
+                Log.Error(exception, "Error");
+            }
         }
 
         private void DocSaved(object sender, DocumentSavedEventArgs e)
         {
-            if (Log.Logger == null) return;
-            if (!e.IsValidObject) return;
-
-            var documentPath = e.Document.PathName;
-            _savingTimer.AddArgs("documentPath", documentPath);
-            _savingTimer.AddArgs("documentTitle", e.Document.Title);
-            _savingTimer.AddArgs("documentSize", GetDocumentSize(documentPath));
-            _savingTimer.Stop();
+            try
+            {
+                var documentPath = e.Document.PathName;
+                _savingTimer.AddArgs("documentPath", documentPath);
+                _savingTimer.AddArgs("documentTitle", e.Document.Title);
+                _savingTimer.AddArgs("documentSize", GetDocumentSize(documentPath));
+                _savingTimer.Stop();
+            }
+            catch (Exception exception)
+            {
+                Log.Error(exception, "Error");
+            }
         }
 
         private void DocSavingAs(object sender, DocumentSavingAsEventArgs e)
         {
-            if (Log.Logger == null) return;
-            if (!e.IsValidObject) return;
-
             _savingAsTimer.Start();
         }
 
         private void DocSavedAs(object sender, DocumentSavedAsEventArgs e)
         {
-            if (Log.Logger == null) return;
-            if (!e.IsValidObject) return;
-
-            var documentPath = e.Document.PathName;
-            _savingAsTimer.AddArgs("documentPath", documentPath);
-            _savingAsTimer.AddArgs("documentTitle", e.Document.Title);
-            _savingAsTimer.AddArgs("documentSize", GetDocumentSize(documentPath));
-            _savingAsTimer.AddArgs("masterFile", e.IsSavingAsMasterFile);
-            _savingAsTimer.AddArgs("originalDocumentPath", e.OriginalPath);
-            _savingTimer.Stop();
+            try
+            {
+                var documentPath = e.Document.PathName;
+                _savingAsTimer.AddArgs("documentPath", documentPath);
+                _savingAsTimer.AddArgs("documentTitle", e.Document.Title);
+                _savingAsTimer.AddArgs("documentSize", GetDocumentSize(documentPath));
+                _savingAsTimer.AddArgs("masterFile", e.IsSavingAsMasterFile);
+                _savingAsTimer.AddArgs("originalDocumentPath", e.OriginalPath);
+                _savingTimer.Stop();
+            }
+            catch (Exception exception)
+            {
+                Log.Error(exception, "Error");
+            }
         }
 
 
         private void DocSynchronizing(object sender, DocumentSynchronizingWithCentralEventArgs e)
         {
-            if (Log.Logger == null) return;
-            if (!e.IsValidObject) return;
-
-            _synchronizingTimer.AddArgs("comments", e.Comments);
-            _synchronizingTimer.Start();
+            try
+            {
+                _synchronizingTimer.AddArgs("comments", e.Comments);
+                _synchronizingTimer.Start();
+            }
+            catch (Exception exception)
+            {
+                Log.Error(exception, "Error");
+            }
         }
 
         private void DocSynchronized(object sender, DocumentSynchronizedWithCentralEventArgs e)
         {
-            if (Log.Logger == null) return;
-            if (!e.IsValidObject) return;
-
-            var documentPath = e.Document.PathName;
-            _synchronizingTimer.AddArgs("documentPath", documentPath);
-            _synchronizingTimer.AddArgs("documentTitle", e.Document.Title);
-            _synchronizingTimer.AddArgs("documentSize", GetDocumentSize(documentPath));
-            _synchronizingTimer.Stop();
+            try
+            {
+                var documentPath = e.Document.PathName;
+                _synchronizingTimer.AddArgs("documentPath", documentPath);
+                _synchronizingTimer.AddArgs("documentTitle", e.Document.Title);
+                _synchronizingTimer.AddArgs("documentSize", GetDocumentSize(documentPath));
+                _synchronizingTimer.Stop();
+            }
+            catch (Exception exception)
+            {
+                Log.Error(exception, "Error");
+            }
         }
 
         private void DocChanged(object sender, DocumentChangedEventArgs e)
         {
-            if (Log.Logger == null) return;
-            if (!e.IsValidObject) return;
-
-            var documentPath = e.GetDocument().PathName;
-            var data = new Dictionary<string, string>
+            try
             {
-                { "documentPath", documentPath },
-                { "documentTitle", e.GetDocument().Title },
-                { "deletedElements", e.GetDeletedElementIds().Count.ToString() },
-                { "modifiedElements", e.GetModifiedElementIds().Count.ToString() },
-                { "addedElements", e.GetAddedElementIds().Count.ToString() }
-            };
-            Log.Information("Document Modified: {Data}", data);
+                var documentPath = e.GetDocument().PathName;
+                var data = new Dictionary<string, string>
+                {
+                    { "documentPath", documentPath },
+                    { "documentTitle", e.GetDocument().Title },
+                    { "deletedElements", e.GetDeletedElementIds().Count.ToString() },
+                    { "modifiedElements", e.GetModifiedElementIds().Count.ToString() },
+                    { "addedElements", e.GetAddedElementIds().Count.ToString() }
+                };
+                Log.Information("Document Modified: {Data}", data);
+            }
+            catch (Exception exception)
+            {
+                Log.Error(exception, "Error");
+            }
         }
 
         private void UiButtonClicked(object sender, RibbonItemExecutedEventArgs e)
         {
-            if (Log.Logger == null) return;
-            if (e.Item == null) return;
-
-            var data = new Dictionary<string, string>
+            try
             {
-                { "buttonId", e.Item.Text.Replace("\r\n", " ") },
-                { "buttonName", e.Item.Id }
-            };
-            Log.Information("Button Clicked: {Data}", data);
+                var data = new Dictionary<string, string>
+                {
+                    { "buttonId", e.Item.Text.Replace("\r\n", " ") },
+                    { "buttonName", e.Item.Id }
+                };
+                Log.Information("Button Clicked: {Data}", data);
+            }
+            catch (Exception exception)
+            {
+                Log.Error(exception, "Error");
+            }
         }
 
         private static string GetDocumentSize(string path)

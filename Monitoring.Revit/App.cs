@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using Autodesk.Revit.UI;
+using Microsoft.Extensions.Configuration;
 using Monitoring.Revit.Extensions;
 using Monitoring.Revit.Logging;
 using Revit.DependencyInjection.Unity.Applications;
@@ -17,32 +18,57 @@ namespace Monitoring.Revit
 
         public override Result OnStartup(IUnityContainer container, UIControlledApplication application)
         {
-            var config = Configuration.JsonConfiguration();
-            Log.Logger = ApplicationExtensions.RegisterLogger(config, application);
-            var fi = application.GetType().GetField("m_uiapplication", BindingFlags.NonPublic | BindingFlags.Instance);
-            var uiApp = (UIApplication)fi?.GetValue(application);
-            
-            container.RegisterInstance(uiApp);
-            container.RegisterInstance(config);
-            container.RegisterInstance(application.MainWindowHandle);
-            container.RegisterEventHandler(config);
-            
-            var events = container.Resolve<Events>();
-            events.SubscribeToEvents(application);
+            try
+            {
+                var config = Configuration.JsonConfiguration();
+                container.RegisterInstance(Configuration.JsonConfiguration());
+                Log.Logger = ApplicationExtensions.RegisterLogger(config, application);
 
-            Log.Information("Revit Started");  
+            }
+            catch (Exception)
+            {
+                return Result.Failed;
+            }
+            
+            try
+            {
+                // Get Private Field of UiControlledApp to get UIApp
+                var fi = application.GetType().GetField("m_uiapplication", BindingFlags.NonPublic | BindingFlags.Instance);
+                var uiApp = (UIApplication)fi?.GetValue(application);
+            
+                container.RegisterInstance(uiApp);
+                container.RegisterInstance(application.MainWindowHandle);
+                var configRoot = container.Resolve<IConfigurationRoot>();
+                container.RegisterEventHandler(configRoot);
+            
+                var events = container.Resolve<Events>();
+                events.SubscribeToEvents(application);
+
+                Log.Information("Revit Started");
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error");
+            }
             return Result.Succeeded;
         }
 
         public override Result OnShutdown(IUnityContainer container, UIControlledApplication application)
         {
-            var events = container.Resolve<Events>();
-            events.UnsubscribeToEvents(application);
+            try
+            {
+                var events = container.Resolve<Events>();
+                events.UnsubscribeToEvents(application);
 
-            var idleTimer = container.Resolve<IdleTimer>();
-            idleTimer.Dispose();
+                var idleTimer = container.Resolve<IdleTimer>();
+                idleTimer.Dispose();
 
-            Log.CloseAndFlush();
+                Log.CloseAndFlush();
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error");
+            }
             return Result.Succeeded;
         }
     }

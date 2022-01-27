@@ -3,6 +3,7 @@ using Autodesk.Revit.UI;
 using Microsoft.Extensions.Configuration;
 using Monitoring.Revit.Logging;
 using Serilog;
+using Serilog.Exceptions;
 using Unity;
 
 namespace Monitoring.Revit.Extensions
@@ -15,6 +16,7 @@ namespace Monitoring.Revit.Extensions
                 .MinimumLevel.Information()
                 .WriteTo.Async(r => r.Seq(config["Seq:Uri"], apiKey: config["Seq:Key"]))
                 .WriteTo.Async(r => r.AzureDocumentDB(config["CosmosDB:Uri"], config["CosmosDB:Key"]))
+                .Enrich.WithExceptionDetails()
                 .Enrich.WithProperty("machineName", Environment.MachineName)
                 .Enrich.WithProperty("userName", Environment.UserName)
                 .Enrich.WithProperty("domain", Environment.UserDomainName)
