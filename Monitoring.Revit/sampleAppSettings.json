@@ -1,0 +1,26 @@
+﻿{
+  "CosmosDB": {
+    "Uri": "CosmosUri",
+    "Key": "CosmosKey"
+  },
+  "Seq" : {
+    "Uri" : "SeqUri",
+    "Key" : "SeqKey"
+  },
+  "Events": {
+    "Initialized" : true,
+    "Opening" : true,
+    "Saving" : true,
+    "Synchronizing" : true,
+    "Printing" : true,
+    "Exporting" : true,
+    "Importing" : true,
+    "FamilyLoading" : true,
+    "ViewChanged" : true,
+    "Changes" : true,
+    "UiClicks" : true,
+    "TimeSpent": true,
+    "IdleTimeout": 15,
+    "TimerFrequency" : 20
+  }
+}
